@@ -1,79 +1,96 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { IUser } from '../interfaces/user.interface';
-import User from '../models/user.model';
-import { UserRole } from '../enums/user.roles';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { IUser } from "../interfaces/user.interface";
+import User from "../models/user.model";
+import { UserRole } from "../enums/user.roles";
 
 interface AuthRequest extends Request {
   user?: IUser;
 }
 
-export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const auth = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
-        message: 'No authentication token provided'
+        message: "No authentication token provided",
       });
+      return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    const user = await User.findById(decoded.id).select('-password');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+    };
+    const user = await User.findById(decoded.id).select("-password");
 
     if (!user || !user.isActive) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
-        message: 'User not found or inactive'
+        message: "User not found or inactive",
       });
+      return;
     }
 
     req.user = user;
-    next();
+    return next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error("Authentication error:", error);
     res.status(401).json({
       success: false,
-      message: 'Invalid authentication token'
+      message: "Invalid authentication token",
     });
+    return;
   }
 };
 
 export const requireRole = (roles: UserRole[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
-        message: 'Not authenticated'
+        message: "Not authenticated",
       });
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
-        message: 'Insufficient permissions'
+        message: "Insufficient permissions",
       });
+      return;
     }
 
-    next();
+    return next();
   };
 };
 
-export const requirePremium = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requirePremium = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
   if (!req.user) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
-      message: 'Not authenticated'
+      message: "Not authenticated",
     });
+    return;
   }
 
   if (req.user.role !== UserRole.PREMIUM && req.user.role !== UserRole.ADMIN) {
-    return res.status(403).json({
+    res.status(403).json({
       success: false,
-      message: 'Premium subscription required'
+      message: "Premium subscription required",
     });
+    return;
   }
 
-  next();
-}; 
+  return next();
+};

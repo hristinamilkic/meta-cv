@@ -11,11 +11,13 @@ import cvRoutes from "./routes/cv.routes";
 // Load environment variables
 config();
 
-const requiredEnvVars = ['PORT', 'MONGO_URI', 'JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+const requiredEnvVars = ["PORT", "MONGO_URI", "JWT_SECRET"];
+const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  throw new Error(
+    `Missing required environment variables: ${missingEnvVars.join(", ")}`
+  );
 }
 
 // Create Express app
@@ -28,22 +30,29 @@ connectDB();
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
-app.use(morgan('dev')); // Logging
+app.use(morgan("dev")); // Logging
 
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    console.error(err.stack);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+);
 
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     success: true,
     message: "Welcome to Meta CV API",
-    version: "1.0.0"
+    version: "1.0.0",
   });
 });
 
@@ -51,14 +60,14 @@ app.use("/api/users", userRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/cvs", cvRoutes);
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: "Route not found",
   });
 });
 
@@ -68,12 +77,12 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-process.on('unhandledRejection', (err: Error) => {
-  console.error('Unhandled Promise Rejection:', err);
+process.on("unhandledRejection", (err: Error) => {
+  console.error("Unhandled Promise Rejection:", err);
   server.close(() => process.exit(1));
 });
 
-process.on('uncaughtException', (err: Error) => {
-  console.error('Uncaught Exception:', err);
+process.on("uncaughtException", (err: Error) => {
+  console.error("Uncaught Exception:", err);
   server.close(() => process.exit(1));
 });
