@@ -1,27 +1,41 @@
 {
-  "name": "server",
+  "name": "meta-cv-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Backend server for Meta CV application",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn src/index.ts"
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
+    "@types/helmet": "^0.0.48",
+    "@types/morgan": "^1.9.10",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "mongodb": "^6.17.0",
-    "mongoose": "^8.15.1"
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.2.0",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.18",
-    "@types/express": "^5.0.2",
-    "@types/mongoose": "^5.11.96",
-    "@types/node": "^22.15.30",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.8.3"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.11.24",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "eslint": "^8.57.0",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }
