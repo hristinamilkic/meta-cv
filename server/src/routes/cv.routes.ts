@@ -1,27 +1,27 @@
-import { Router } from 'express';
+import express from "express";
 import {
   createCV,
   getUserCVs,
+  getCVAnalytics,
   getCVById,
   updateCV,
   deleteCV,
-  getCVAnalytics
-} from '../controllers/cv.controller';
-import { auth, requirePremium } from '../middleware/auth';
+  downloadCV,
+} from "../controllers/cv.controller";
+import { requireAuth } from "src/middleware/auth.middleware";
 
-const router = Router();
+const router = express.Router();
 
-// All CV routes require authentication
-router.use(auth);
+// all routes are protected
+router.use(requireAuth);
 
-// Basic CV operations
-router.post('/', createCV);
-router.get('/', getUserCVs);
-router.get('/:id', getCVById);
-router.put('/:id', updateCV);
-router.delete('/:id', deleteCV);
+// CV management routes
+router.post("/", createCV);
+router.get("/", getUserCVs);
+router.get("/analytics", getCVAnalytics);
+router.get("/:id", getCVById);
+router.put("/:id", updateCV);
+router.delete("/:id", deleteCV);
+router.get("/:id/download", downloadCV);
 
-// Analytics (premium feature)
-router.get('/analytics/overview', requirePremium, getCVAnalytics);
-
-export default router; 
+export default router;

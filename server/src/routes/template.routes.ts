@@ -1,23 +1,17 @@
-import { Router } from "express";
-import {
-  getAllTemplates,
-  getTemplateById,
-  createTemplate,
-  updateTemplate,
-  deleteTemplate,
-} from "../controllers/template.controller";
-import { auth, requireRole } from "../middleware/auth";
-import { UserRole } from "../enums/user.roles";
+import express from "express";
+import { templateController } from "../controllers/template.controller";
+import { requireAuth } from "src/middleware/auth.middleware";
 
-const router = Router();
+const router = express.Router();
 
-// Public routes
-router.get("/", getAllTemplates);
-router.get("/:id", getTemplateById);
+// public routes - basic and premium user
+router.get("/", templateController.getTemplates);
+router.get("/:id", templateController.getTemplate);
 
-// Protected routes (admin only)
-router.post("/", auth, requireRole([UserRole.ADMIN]), createTemplate);
-router.put("/:id", auth, requireRole([UserRole.ADMIN]), updateTemplate);
-router.delete("/:id", auth, requireRole([UserRole.ADMIN]), deleteTemplate);
+// protected routes - admin only
+router.use(requireAuth);
+router.post("/", templateController.createTemplate);
+router.put("/:id", templateController.updateTemplate);
+router.delete("/:id", templateController.deleteTemplate);
 
 export default router;

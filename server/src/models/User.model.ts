@@ -1,62 +1,89 @@
-import mongoose, { Schema } from 'mongoose';
-import bcrypt from 'bcryptjs';
-import { IUser } from '../interfaces/user.interface';
-import { UserRole } from '../enums/user.roles';
+import { Schema, model, Document } from "mongoose";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
-const UserSchema = new Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true
+export interface IUser extends Document {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  isPremium: boolean;
+  isAdmin: boolean;
+  isActive: boolean;
+  lastLogin?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+  generatePasswordResetToken(): string;
+}
+
+const userSchema = new Schema<IUser>(
+  {
+    firstName: {
+      type: String,
+      required: [true, "First name is required"],
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: [true, "Last name is required"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters"],
+      select: false,
+    },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLogin: {
+      type: Date,
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
-  password: {
-    type: String,
-    required: true,
-    minlength: 6
-  },
-  firstName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  lastName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  role: {
-    type: String,
-    enum: Object.values(UserRole),
-    default: UserRole.BASIC
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  lastLogin: {
-    type: Date
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-});
+);
 
 // Hash password before saving
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password as string, salt);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
-  } catch (error) {
-    next(error as Error);
+  } catch (error: any) {
+    next(error);
   }
 });
 
 // Compare password method
-UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -64,9 +91,24 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
   }
 };
 
-// Indexes
-UserSchema.index({ email: 1 });
-UserSchema.index({ role: 1 });
-UserSchema.index({ isActive: 1 });
+// Generate password reset token
+userSchema.methods.generatePasswordResetToken = function (): string {
+  const resetToken = crypto.randomBytes(32).toString("hex");
 
-export default mongoose.model<IUser>('User', UserSchema);
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  return resetToken;
+};
+
+// Create indexes
+userSchema.index({ email: 1 });
+userSchema.index({ isPremium: 1 });
+userSchema.index({ isAdmin: 1 });
+userSchema.index({ isActive: 1 });
+
+export default model<IUser>("User", userSchema);

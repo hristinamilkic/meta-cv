@@ -276,7 +276,6 @@ TemplateSchema.index({ "metadata.category": 1 });
 TemplateSchema.index({ isPremium: 1 });
 TemplateSchema.index({ isActive: 1 });
 
-// Update metadata.updatedAt on save
 TemplateSchema.pre("save", function (next) {
   this.metadata.updatedAt = new Date();
   next();

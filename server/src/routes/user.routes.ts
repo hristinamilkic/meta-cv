@@ -1,29 +1,25 @@
-import { Router } from 'express';
-import {
-  register,
-  login,
-  getProfile,
-  updateProfile,
-  getAllUsers,
-  updateUserRole,
-  deactivateUser
-} from '../controllers/user.controller';
-import { auth, requireRole } from '../middleware/auth';
-import { UserRole } from '../enums/user.roles';
+import express from "express";
+import { userController } from "../controllers/user.controller";
+import { register } from "../controllers/user.controller";
+import { requireAuth } from "../middleware/auth.middleware";
+import { requireAdmin } from "../middleware/admin.middleware";
 
-const router = Router();
+const router = express.Router();
 
 // Public routes
-router.post('/register', register);
-router.post('/login', login);
+router.post("/register", register);
+router.post("/login", userController.login);
+router.post("/forgot-password", userController.requestPasswordReset);
+router.post("/reset-password", userController.resetPassword);
 
 // Protected routes
-router.get('/profile', auth, getProfile);
-router.put('/profile', auth, updateProfile);
+router.get("/me", requireAuth, userController.getCurrentUser);
+router.put("/profile", userController.updateProfile);
+router.put("/password", userController.changePassword);
 
 // Admin routes
-router.get('/users', auth, requireRole([UserRole.ADMIN]), getAllUsers);
-router.put('/users/:userId/role', auth, requireRole([UserRole.ADMIN]), updateUserRole);
-router.put('/users/:userId/deactivate', auth, requireRole([UserRole.ADMIN]), deactivateUser);
+router.post("/create", requireAuth, requireAdmin, userController.createUser);
+router.get("/all", requireAuth, requireAdmin, userController.getAllUsers);
+router.put("/:userId", requireAuth, requireAdmin, userController.updateUser);
 
 export default router;

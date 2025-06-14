@@ -128,13 +128,11 @@ const CVSchema = new Schema({
   timestamps: true
 });
 
-// Indexes for better query performance
 CVSchema.index({ userId: 1 });
 CVSchema.index({ title: 1 });
 CVSchema.index({ isPublic: 1 });
 CVSchema.index({ 'personalDetails.email': 1 });
 
-// Update lastModified on save
 CVSchema.pre('save', function(next) {
   this.lastModified = new Date();
   next();

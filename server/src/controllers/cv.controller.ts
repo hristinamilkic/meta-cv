@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 // import { ICV } from "../interfaces/cv.interface";
 import { IUser } from "../interfaces/user.interface";
 import CV from "../models/cv.model";
+import { Template } from "../models/template.model";
+import { PDFService } from "../services/pdf.service";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -16,24 +18,41 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const cv = new CV({
-      ...req.body,
-      userId: req.user._id,
+    const { templateId, data } = req.body;
+
+    const template = await Template.findById(templateId);
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: "Template not found",
+      });
+    }
+
+    if (template.isPremium && !req.user.isPremium) {
+      return res.status(403).json({
+        success: false,
+        message: "Premium template requires premium subscription",
+      });
+    }
+
+    const cv = await CV.create({
+      user: req.user._id,
+      template: templateId,
+      data,
+      title: data.personalInfo?.fullName || "Untitled CV",
     });
 
-    await cv.save();
     res.status(201).json({
       success: true,
       data: cv,
     });
   } catch (error) {
-    console.error("Error creating CV:", error);
     res.status(500).json({
       success: false,
       message: "Error creating CV",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-  return;
 };
 
 export const getUserCVs = async (req: AuthRequest, res: Response) => {
@@ -45,22 +64,21 @@ export const getUserCVs = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const cvs = await CV.find({ userId: req.user._id }).sort({
-      lastModified: -1,
-    });
+    const cvs = await CV.find({ user: req.user._id })
+      .populate("template", "name thumbnail")
+      .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: cvs,
     });
   } catch (error) {
-    console.error("Error fetching CVs:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching CVs",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-  return;
 };
 
 export const getCVById = async (req: AuthRequest, res: Response) => {
@@ -74,8 +92,8 @@ export const getCVById = async (req: AuthRequest, res: Response) => {
 
     const cv = await CV.findOne({
       _id: req.params.id,
-      userId: req.user._id,
-    });
+      user: req.user._id,
+    }).populate("template");
 
     if (!cv) {
       return res.status(404).json({
@@ -84,18 +102,17 @@ export const getCVById = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: cv,
     });
   } catch (error) {
-    console.error("Error fetching CV:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching CV",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-  return;
 };
 
 export const updateCV = async (req: AuthRequest, res: Response) => {
@@ -107,11 +124,13 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    const { data, title } = req.body;
+
     const cv = await CV.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
-      { ...req.body, lastModified: new Date() },
+      { _id: req.params.id, user: req.user._id },
+      { data, title },
       { new: true }
-    );
+    ).populate("template");
 
     if (!cv) {
       return res.status(404).json({
@@ -120,18 +139,17 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: cv,
     });
   } catch (error) {
-    console.error("Error updating CV:", error);
     res.status(500).json({
       success: false,
       message: "Error updating CV",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-  return;
 };
 
 export const deleteCV = async (req: AuthRequest, res: Response) => {
@@ -145,7 +163,7 @@ export const deleteCV = async (req: AuthRequest, res: Response) => {
 
     const cv = await CV.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user._id,
+      user: req.user._id,
     });
 
     if (!cv) {
@@ -155,18 +173,55 @@ export const deleteCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
       message: "CV deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting CV:", error);
     res.status(500).json({
       success: false,
       message: "Error deleting CV",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-  return;
+};
+
+export const downloadCV = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    const cv = await CV.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    }).populate("template");
+
+    if (!cv) {
+      return res.status(404).json({
+        success: false,
+        message: "CV not found",
+      });
+    }
+
+    const pdfBuffer = await PDFService.generatePDF(cv, cv.template);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${cv.title}.pdf"`
+    );
+    res.send(pdfBuffer);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error generating PDF",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
 };
 
 export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
@@ -178,31 +233,40 @@ export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const totalCVs = await CV.countDocuments({ userId: req.user._id });
-    const lastMonthCVs = await CV.countDocuments({
-      userId: req.user._id,
-      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+    const totalCVs = await CV.countDocuments({ user: req.user._id });
+    const lastWeekCVs = await CV.countDocuments({
+      user: req.user._id,
+      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     });
 
-    const publicCVs = await CV.countDocuments({
-      userId: req.user._id,
-      isPublic: true,
-    });
+    const templateUsage = await CV.aggregate([
+      { $match: { user: req.user._id } },
+      { $group: { _id: "$template", count: { $sum: 1 } } },
+      {
+        $lookup: {
+          from: "templates",
+          localField: "_id",
+          foreignField: "_id",
+          as: "template",
+        },
+      },
+      { $unwind: "$template" },
+      { $project: { templateName: "$template.name", count: 1, _id: 0 } },
+    ]);
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: {
         totalCVs,
-        lastMonthCVs,
-        publicCVs,
+        lastWeekCVs,
+        templateUsage,
       },
     });
   } catch (error) {
-    console.error("Error fetching CV analytics:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching CV analytics",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-  return;
 };

@@ -2,12 +2,12 @@ import mongoose from "mongoose";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model";
-import { IUser } from "../interfaces/user.interface";
-import { UserRole } from "../enums/user.roles";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { emailService } from "../services/email.service";
+import { AuthRequest } from "../middleware/auth.middleware";
 
-interface AuthRequest extends Request {
-  user?: IUser;
-}
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -45,7 +45,8 @@ export const createUser = async (req: Request, res: Response) => {
       password,
       firstName,
       lastName,
-      role: UserRole.BASIC,
+      isAdmin: false,
+      isPremium: false,
     });
 
     await user.save();
@@ -56,7 +57,8 @@ export const createUser = async (req: Request, res: Response) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
+        isAdmin: user.isAdmin,
+        isPremium: user.isPremium,
       },
     });
   } catch (error) {
@@ -88,7 +90,7 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     delete updates.password;
-    delete updates.role;
+    delete updates.isAdmin;
     delete updates.isActive;
 
     const updatedUser = await User.findByIdAndUpdate(id, updates, {
@@ -158,14 +160,17 @@ export const register = async (req: Request, res: Response) => {
       password,
       firstName,
       lastName,
-      role: UserRole.BASIC,
+      isAdmin: false,
+      isPremium: false,
     });
 
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, {
-      expiresIn: "24h",
-    });
+    const token = jwt.sign(
+      { userId: user._id, isAdmin: user.isAdmin },
+      JWT_SECRET,
+      { expiresIn: "24h" }
+    );
 
     return res.status(201).json({
       success: true,
@@ -176,7 +181,8 @@ export const register = async (req: Request, res: Response) => {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role,
+          isAdmin: user.isAdmin,
+          isPremium: user.isPremium,
         },
       },
     });
@@ -199,7 +205,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
@@ -218,9 +224,11 @@ export const login = async (req: Request, res: Response) => {
     user.lastLogin = new Date();
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, {
-      expiresIn: "24h",
-    });
+    const token = jwt.sign(
+      { userId: user._id, isAdmin: user.isAdmin },
+      JWT_SECRET,
+      { expiresIn: "24h" }
+    );
 
     return res.json({
       success: true,
@@ -231,7 +239,8 @@ export const login = async (req: Request, res: Response) => {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role,
+          isAdmin: user.isAdmin,
+          isPremium: user.isPremium,
         },
       },
     });
@@ -245,14 +254,14 @@ export const login = async (req: Request, res: Response) => {
 
 export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?._id) {
+    if (!req.user?.userId) {
       return res.status(401).json({
         success: false,
         message: "Not authenticated",
       });
     }
 
-    const user = await User.findById(req.user._id).select("-password");
+    const user = await User.findById(req.user.userId).select("-password");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -271,7 +280,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?._id) {
+    if (!req.user?.userId) {
       return res.status(401).json({
         success: false,
         message: "Not authenticated",
@@ -279,7 +288,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     }
 
     const { firstName, lastName, email } = req.body;
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.userId);
 
     if (!user) {
       return res.status(404).json({
@@ -318,14 +327,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { role } = req.body;
-
-    if (!Object.values(UserRole).includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid role",
-      });
-    }
+    const { isAdmin, isPremium } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -335,7 +337,9 @@ export const updateUserRole = async (req: Request, res: Response) => {
       });
     }
 
-    user.role = role;
+    if (typeof isAdmin === "boolean") user.isAdmin = isAdmin;
+    if (typeof isPremium === "boolean") user.isPremium = isPremium;
+
     await user.save();
 
     return res.json({
@@ -375,4 +379,322 @@ export const deactivateUser = async (req: Request, res: Response) => {
       .status(500)
       .json({ success: false, message: "Error deactivating user" });
   }
+};
+
+export const userController = {
+  // Create a new user (admin only)
+  async createUser(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user?.isAdmin) {
+        return res
+          .status(403)
+          .json({ message: "Only admins can create users" });
+      }
+
+      const { firstName, lastName, email, password, isPremium } = req.body;
+
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      // Hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // Create new user
+      const user = new User({
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        isPremium: isPremium || false,
+        isAdmin: false,
+      });
+
+      await user.save();
+
+      res.status(201).json({
+        message: "User created successfully",
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isPremium: user.isPremium,
+          isAdmin: user.isAdmin,
+        },
+      });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Error creating user" });
+    }
+    return;
+  },
+
+  // Login user
+  async login(req: Request, res: Response) {
+    try {
+      const { email, password } = req.body;
+
+      // Check if user exists
+      const user = await User.findOne({ email }).select("+password");
+      if (!user || !user.isActive) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+
+      // Check password
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      // Create JWT token
+      const token = jwt.sign(
+        { userId: user._id, isAdmin: user.isAdmin },
+        JWT_SECRET,
+        { expiresIn: "24h" }
+      );
+
+      res.json({
+        token,
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isPremium: user.isPremium,
+          isAdmin: user.isAdmin,
+        },
+      });
+    } catch (error) {
+      console.error("Error logging in:", error);
+      res.status(500).json({ message: "Error logging in" });
+    }
+    return;
+  },
+
+  // Get current user
+  async getCurrentUser(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const user = await User.findById(req.user.userId).select("-password");
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isPremium: user.isPremium,
+        isAdmin: user.isAdmin,
+      });
+    } catch (error) {
+      console.error("Error getting user:", error);
+      res.status(500).json({ message: "Error getting user" });
+    }
+    return;
+  },
+
+  // Get all users (admin only)
+  async getAllUsers(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user?.isAdmin) {
+        return res
+          .status(403)
+          .json({ message: "Only admins can view all users" });
+      }
+
+      const users = await User.find().select("-password");
+      res.json(users);
+    } catch (error) {
+      console.error("Error getting users:", error);
+      res.status(500).json({ message: "Error getting users" });
+    }
+    return;
+  },
+
+  // Update user (admin only)
+  async updateUser(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user?.isAdmin) {
+        return res
+          .status(403)
+          .json({ message: "Only admins can update users" });
+      }
+
+      const { userId } = req.params;
+      const { firstName, lastName, email, isPremium } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (firstName) user.firstName = firstName;
+      if (lastName) user.lastName = lastName;
+      if (email) user.email = email;
+      if (typeof isPremium === "boolean") user.isPremium = isPremium;
+
+      await user.save();
+
+      res.json({
+        message: "User updated successfully",
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isPremium: user.isPremium,
+          isAdmin: user.isAdmin,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Error updating user" });
+    }
+    return;
+  },
+
+  // Update profile
+  async updateProfile(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const { firstName, lastName, email } = req.body;
+      const user = await User.findById(req.user.userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (email && email !== user.email) {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+        user.email = email;
+      }
+
+      if (firstName) user.firstName = firstName;
+      if (lastName) user.lastName = lastName;
+
+      await user.save();
+      res.json({
+        message: "Profile updated successfully",
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isPremium: user.isPremium,
+          isAdmin: user.isAdmin,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Error updating profile" });
+    }
+    return;
+  },
+
+  // Change password
+  async changePassword(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      const user = await User.findById(req.user.userId).select("+password");
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return res
+          .status(401)
+          .json({ message: "Current password is incorrect" });
+      }
+
+      user.password = newPassword;
+      await user.save();
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Error changing password" });
+    }
+    return;
+  },
+
+  // Request password reset
+  async requestPasswordReset(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const resetToken = user.generatePasswordResetToken();
+      await user.save();
+
+      await emailService.sendPasswordResetEmail(email, resetToken);
+
+      res.json({ message: "Password reset email sent" });
+    } catch (error) {
+      console.error("Error requesting password reset:", error);
+      res.status(500).json({ message: "Error requesting password reset" });
+    }
+    return;
+  },
+
+  // Reset password
+  async resetPassword(req: Request, res: Response) {
+    try {
+      const { token, password } = req.body;
+      const resetPasswordToken = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+      const user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpire: { $gt: Date.now() },
+      });
+
+      if (!user) {
+        return res
+          .status(400)
+          .json({ message: "Invalid or expired reset token" });
+      }
+
+      user.password = password;
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
+
+      res.json({ message: "Password reset successful" });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: "Error resetting password" });
+    }
+    return;
+  },
 };
