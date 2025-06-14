@@ -22,19 +22,25 @@ export default function Footer() {
         <Link href="/" className="flex flex-col items-center">
           <Icon
             name="home"
-            className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+            className="h-8 w-8 sm:h-10 sm:w-10 object-contain hover:scale-110 transition-all duration-300"
           />
-          <span className="hidden sm:inline">Home</span>
+          <span className="hidden sm:inline text-black">Home</span>
         </Link>
         <div className="w-px bg-slate-300"></div>
         <Link href="/templates" className="flex flex-col items-center">
-          <Icon name="template" className="h-8 w-8 sm:h-10 sm:w-10" />
-          <span className="hidden sm:inline">Templates</span>
+          <Icon
+            name="template"
+            className="h-8 w-8 sm:h-10 sm:w-10 hover:scale-110 transition-all duration-300"
+          />
+          <span className="hidden sm:inline text-black">Templates</span>
         </Link>
         <div className="w-px bg-slate-300"></div>
         <Link href="/build" className="flex flex-col items-center">
-          <Icon name="cv" className="h-8 w-8 sm:h-10 sm:w-10" />
-          <span className="hidden sm:inline">Build CV</span>
+          <Icon
+            name="cv"
+            className="h-8 w-8 sm:h-10 sm:w-10 hover:scale-110 transition-all duration-300"
+          />
+          <span className="hidden sm:inline text-black">Build CV</span>
         </Link>
       </div>
     </div>
