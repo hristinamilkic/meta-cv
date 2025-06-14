@@ -11,7 +11,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Meta CV",
+  title: "META CV",
   description: "Final thesis project by Hristina Milkic",
 };
 

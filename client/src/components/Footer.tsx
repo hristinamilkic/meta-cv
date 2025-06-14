@@ -4,8 +4,8 @@ import { Icon } from "./Icon";
 export default function Footer() {
   return (
     <div
-      className="fixed bottom-2 sm:bottom-6 left-1/2 -translate-x-1/2 bg-[hsl(var(--mc-background))]
- rounded-3xl shadow-xl flex flex-row justify-between items-center px-4 sm:px-8 py-2 sm:py-3 gap-4 sm:gap-8 z-10 w-[95vw] max-w-3xl"
+      className="fixed bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-[hsl(var(--mc-background))]
+ rounded-3xl shadow-xl flex flex-row justify-between items-center px-3 sm:px-7 py-2 sm:py-2 gap-4 sm:gap-8 z-10 w-[100vw] max-w-3xl"
     >
       <Link
         href="/"
@@ -22,7 +22,7 @@ export default function Footer() {
         <Link href="/" className="flex flex-col items-center">
           <Icon
             name="home"
-            className="h-8 w-8 sm:h-10 sm:w-10 object-contain hover:scale-110 transition-all duration-300"
+            className="h-8 w-8 sm:h-9 sm:w-9 object-contain hover:scale-110 transition-all duration-300"
           />
           <span className="hidden sm:inline text-black">Home</span>
         </Link>
@@ -30,7 +30,7 @@ export default function Footer() {
         <Link href="/templates" className="flex flex-col items-center">
           <Icon
             name="template"
-            className="h-8 w-8 sm:h-10 sm:w-10 hover:scale-110 transition-all duration-300"
+            className="h-8 w-8 sm:h-9 sm:w-9 hover:scale-110 transition-all duration-300"
           />
           <span className="hidden sm:inline text-black">Templates</span>
         </Link>
@@ -38,7 +38,7 @@ export default function Footer() {
         <Link href="/build" className="flex flex-col items-center">
           <Icon
             name="cv"
-            className="h-8 w-8 sm:h-10 sm:w-10 hover:scale-110 transition-all duration-300"
+            className="h-8 w-8 sm:h-9 sm:w-9 hover:scale-110 transition-all duration-300"
           />
           <span className="hidden sm:inline text-black">Build CV</span>
         </Link>
