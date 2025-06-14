@@ -1,8 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-family:
+      "Montserrat",
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      "Noto Sans",
+      sans-serif,
+      "Apple Color Emoji",
+      "Segoe UI Emoji",
+      "Segoe UI Symbol",
+      "Noto Color Emoji";
+  }
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
@@ -28,7 +48,12 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem
+    --radius: 0.5rem;
+    --mc-primary: 44 100% 12%; /* #2C003E */
+    --mc-secondary: 288 35% 26%; /* #512B58 */
+    --mc-accent: 26 100% 72%; /* #FFA372 */
+    --mc-warm: 9 72% 73%; /* #EA9085 */
+    --mc-background: 42 100% 95%; /* #FFF9EC */
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -54,7 +79,11 @@
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%
+    --chart-5: 340 75% 55%;
+    --mc-primary: 44 100% 12%;
+    --mc-secondary: 288 35% 26%;
+    --mc-accent: 26 100% 72%;
+    --mc-warm: 9 72% 73%;
   }
 }
 
