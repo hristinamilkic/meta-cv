@@ -6,9 +6,10 @@ async function createAdmin() {
     await connectDB();
 
     const admin = await User.create({
-      name: "Admin User",
-      email: "admin@example.com",
-      password: "admin-password",
+      firstName: "Hristina",
+      lastName: "Milkić",
+      email: "milkichristina@gmail.com",
+      password: "hristinaAdminPassword",
       isAdmin: true,
       isPremium: true,
     });

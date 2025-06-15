@@ -1,12 +1,17 @@
 import { Request, Response } from "express";
-// import { ICV } from "../interfaces/cv.interface";
 import { IUser } from "../interfaces/user.interface";
 import CV from "../models/cv.model";
-import { Template } from "../models/template.model";
 import { PDFService } from "../services/pdf.service";
+import templateModel from "../models/template.model";
+import { ICV } from "../interfaces/cv.interface";
+import { ITemplate } from "../interfaces/template.interface";
 
 interface AuthRequest extends Request {
   user?: IUser;
+}
+
+interface PopulatedCV extends ICV {
+  template: ITemplate;
 }
 
 export const createCV = async (req: AuthRequest, res: Response) => {
@@ -20,7 +25,7 @@ export const createCV = async (req: AuthRequest, res: Response) => {
 
     const { templateId, data } = req.body;
 
-    const template = await Template.findById(templateId);
+    const template = await templateModel.findById(templateId);
     if (!template) {
       return res.status(404).json({
         success: false,
@@ -53,6 +58,7 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
+  return;
 };
 
 export const getUserCVs = async (req: AuthRequest, res: Response) => {
@@ -79,6 +85,7 @@ export const getUserCVs = async (req: AuthRequest, res: Response) => {
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
+  return;
 };
 
 export const getCVById = async (req: AuthRequest, res: Response) => {
@@ -113,6 +120,7 @@ export const getCVById = async (req: AuthRequest, res: Response) => {
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
+  return;
 };
 
 export const updateCV = async (req: AuthRequest, res: Response) => {
@@ -150,6 +158,7 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
+  return;
 };
 
 export const deleteCV = async (req: AuthRequest, res: Response) => {
@@ -184,6 +193,7 @@ export const deleteCV = async (req: AuthRequest, res: Response) => {
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
+  return;
 };
 
 export const downloadCV = async (req: AuthRequest, res: Response) => {
@@ -195,10 +205,10 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const cv = await CV.findOne({
+    const cv = (await CV.findOne({
       _id: req.params.id,
       user: req.user._id,
-    }).populate("template");
+    }).populate("template")) as PopulatedCV | null;
 
     if (!cv) {
       return res.status(404).json({
@@ -207,7 +217,16 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const pdfBuffer = await PDFService.generatePDF(cv, cv.template);
+    const cvData = cv.toObject();
+    if (!cv.template) {
+      return res.status(404).json({
+        success: false,
+        message: "Template not found",
+      });
+    }
+
+    const templateData = cv.template.toObject();
+    const pdfBuffer = await PDFService.generatePDF(cvData, templateData);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -222,6 +241,7 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
+  return;
 };
 
 export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
@@ -269,4 +289,5 @@ export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
+  return;
 };

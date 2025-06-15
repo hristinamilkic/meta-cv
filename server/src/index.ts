@@ -8,7 +8,6 @@ import userRoutes from "./routes/user.routes";
 import templateRoutes from "./routes/template.routes";
 import cvRoutes from "./routes/cv.routes";
 
-// Load environment variables
 config();
 
 const requiredEnvVars = ["PORT", "MONGO_URI", "JWT_SECRET"];
@@ -20,10 +19,8 @@ if (missingEnvVars.length > 0) {
   );
 }
 
-// Create Express app
 const app = express();
 
-// Connect to database
 connectDB();
 
 // Middleware
@@ -71,7 +68,6 @@ app.use((req, res) => {
   });
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

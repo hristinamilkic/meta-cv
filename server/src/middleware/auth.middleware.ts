@@ -46,6 +46,7 @@ export const requireAuth = async (
     console.error("Auth middleware error:", error);
     res.status(401).json({ message: "Invalid token" });
   }
+  return;
 };
 
 export const checkPremium = async (

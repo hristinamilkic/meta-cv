@@ -8,7 +8,7 @@ import {
   deleteCV,
   downloadCV,
 } from "../controllers/cv.controller";
-import { requireAuth } from "src/middleware/auth.middleware";
+import { requireAuth } from "../middleware/auth.middleware";
 
 const router = express.Router();
 

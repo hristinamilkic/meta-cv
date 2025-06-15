@@ -16,4 +16,5 @@ export const requireAdmin = (
     });
   }
   next();
+  return;
 };
