@@ -1,6 +1,18 @@
 import api from "./api";
 
-export interface LoginCredentials {
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  isPremium: boolean;
+  isAdmin: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoginData {
   email: string;
   password: string;
 }
@@ -12,47 +24,93 @@ export interface RegisterData {
   password: string;
 }
 
-export interface ResetPasswordData {
-  token: string;
-  password: string;
+export interface PasswordResetData {
+  email: string;
 }
 
-const authService = {
-  login: async (credentials: LoginCredentials) => {
-    const response = await api.post("/users/login", credentials);
-    if (response.data.token) {
-      localStorage.setItem("token", response.data.token);
+export interface PasswordChangeData {
+  code: string;
+  "new-password": string;
+}
+
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
+class AuthService {
+  async login(data: LoginData): Promise<{ user: User; token: string }> {
+    const response = await api.post("/api/users/login", data);
+    return response.data;
+  }
+
+  async register(data: RegisterData): Promise<{ user: User; token: string }> {
+    const response = await api.post("/api/users/register", data);
+    return response.data;
+  }
+
+  async logout(): Promise<void> {
+    await api.post("/api/users/logout");
+  }
+
+  async getCurrentUser(): Promise<User> {
+    const response = await api.get("/api/users/me");
+    return response.data;
+  }
+  async requestPasswordReset(
+    data: PasswordResetData
+  ): Promise<{ message: string }> {
+    const response = await api.post("/api/users/forgot-password", data);
+    return response.data;
+  }
+  async resetPassword(data: PasswordChangeData): Promise<{ message: string }> {
+    const response = await api.post("/api/users/reset-password", data);
+    return response.data;
+  }
+  async changePassword(data: ChangePasswordData): Promise<{ message: string }> {
+    const response = await api.post("/api/users/password", data);
+    return response.data;
+  }
+  async updateProfile(data: Partial<User>): Promise<User> {
+    const response = await fetch("/api/users/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update profile");
     }
-    return response.data;
-  },
 
-  register: async (data: RegisterData) => {
-    const response = await api.post("/users/register", data);
-    return response.data;
-  },
+    return response.json();
+  }
 
-  logout: () => {
-    localStorage.removeItem("token");
-  },
+  isAuthenticated(): boolean {
+    if (typeof window === "undefined") return false;
+    return document.cookie.includes("token=");
+  }
 
-  forgotPassword: async (email: string) => {
-    const response = await api.post("/users/forgot-password", { email });
-    return response.data;
-  },
+  getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    const tokenCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="));
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  }
 
-  resetPassword: async (data: ResetPasswordData) => {
-    const response = await api.post("/users/reset-password", data);
-    return response.data;
-  },
+  setToken(token: string): void {
+    if (typeof window === "undefined") return;
+    document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
+  }
 
-  getCurrentUser: async () => {
-    const response = await api.get("/users/me");
-    return response.data;
-  },
+  removeToken(): void {
+    if (typeof window === "undefined") return;
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  }
+}
 
-  isAuthenticated: () => {
-    return !!localStorage.getItem("token");
-  },
-};
-
+export const authService = new AuthService();
 export default authService;

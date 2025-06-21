@@ -7,12 +7,15 @@ export interface IUser extends Document {
   lastName: string;
   email: string;
   password: string;
+  phone?: string;
   isPremium: boolean;
   isAdmin: boolean;
   isActive: boolean;
   lastLogin?: Date;
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
+  createdAt: Date;
+  updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
   generatePasswordResetToken(): string;
 }
@@ -35,6 +38,10 @@ const userSchema = new Schema<IUser>(
       unique: true,
       trim: true,
       lowercase: true,
+    },
+    phone: {
+      type: String,
+      trim: true,
     },
     password: {
       type: String,
@@ -65,7 +72,6 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     return next();
@@ -80,7 +86,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Compare password method
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
@@ -91,9 +96,7 @@ userSchema.methods.comparePassword = async function (
   }
 };
 
-// Generate password reset token
 userSchema.methods.generatePasswordResetToken = function (): string {
-  // Generate a 6-digit numeric code
   const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
 
   this.resetPasswordToken = crypto
@@ -101,12 +104,11 @@ userSchema.methods.generatePasswordResetToken = function (): string {
     .update(resetToken)
     .digest("hex");
 
-  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); 
 
   return resetToken;
 };
 
-// Create indexes
 userSchema.index({ email: 1 });
 userSchema.index({ isPremium: 1 });
 userSchema.index({ isAdmin: 1 });

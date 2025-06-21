@@ -280,48 +280,55 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?._id) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authenticated",
-      });
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const { firstName, lastName, email } = req.body;
-    const user = await User.findById(req.user._id);
+    const { firstName, lastName, phone, currentPassword, newPassword } =
+      req.body;
+    const user = await User.findById(req.user._id).select("+password");
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    if (email && email !== user.email) {
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: "Email already in use",
-        });
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (phone !== undefined) user.phone = phone;
+
+    if (currentPassword && newPassword) {
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return res
+          .status(401)
+          .json({ message: "Current password is incorrect" });
       }
-      user.email = email;
+      user.password = newPassword;
     }
-
-    user.firstName = firstName || user.firstName;
-    user.lastName = lastName || user.lastName;
 
     await user.save();
-    return res.json({
-      success: true,
+
+    const userResponse = {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      isPremium: user.isPremium,
+      isAdmin: user.isAdmin,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    res.json({
       message: "Profile updated successfully",
+      user: userResponse,
     });
   } catch (error) {
     console.error("Error updating profile:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Error updating profile" });
+    res.status(500).json({ message: "Error updating profile" });
   }
+  return;
 };
 
 export const updateUserRole = async (req: Request, res: Response) => {
@@ -479,7 +486,6 @@ export const userController = {
     return;
   },
 
-  // Get current user
   async getCurrentUser(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -524,7 +530,6 @@ export const userController = {
     return;
   },
 
-  // Update user (admin only)
   async updateUser(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.isAdmin) {
@@ -566,42 +571,50 @@ export const userController = {
     return;
   },
 
-  // Update profile
   async updateProfile(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      const { firstName, lastName, email } = req.body;
-      const user = await User.findById(req.user._id);
+      const { firstName, lastName, phone, currentPassword, newPassword } =
+        req.body;
+      const user = await User.findById(req.user._id).select("+password");
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      if (email && email !== user.email) {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-          return res.status(400).json({ message: "Email already in use" });
-        }
-        user.email = email;
-      }
-
       if (firstName) user.firstName = firstName;
       if (lastName) user.lastName = lastName;
+      if (phone !== undefined) user.phone = phone;
+
+      if (currentPassword && newPassword) {
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) {
+          return res
+            .status(401)
+            .json({ message: "Current password is incorrect" });
+        }
+        user.password = newPassword;
+      }
 
       await user.save();
+      const userResponse = {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        isPremium: user.isPremium,
+        isAdmin: user.isAdmin,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+
       res.json({
         message: "Profile updated successfully",
-        user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          isPremium: user.isPremium,
-          isAdmin: user.isAdmin,
-        },
+        user: userResponse,
       });
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -610,7 +623,6 @@ export const userController = {
     return;
   },
 
-  // Change password
   async changePassword(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -642,7 +654,6 @@ export const userController = {
     return;
   },
 
-  // Request password reset
   async requestPasswordReset(req: Request, res: Response) {
     try {
       const { email } = req.body;
@@ -655,7 +666,6 @@ export const userController = {
       const resetToken = user.generatePasswordResetToken();
       await user.save();
 
-      // Send password reset email
       try {
         await emailService.sendPasswordResetEmail(email, resetToken);
         res.json({
@@ -675,7 +685,6 @@ export const userController = {
     return;
   },
 
-  // Reset password
   async resetPassword(req: Request, res: Response) {
     try {
       const { code, "new-password": newPassword } = req.body;
@@ -702,7 +711,6 @@ export const userController = {
           .json({ message: "Invalid or expired reset code" });
       }
 
-      // Set the new password
       user.password = newPassword;
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
@@ -713,6 +721,24 @@ export const userController = {
     } catch (error) {
       console.error("Error resetting password:", error);
       res.status(500).json({ message: "Error resetting password" });
+    }
+    return;
+  },
+
+  
+  async logout(req: Request, res: Response) {
+    try {
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+      });
+
+      res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      res.status(500).json({ message: "Error during logout" });
     }
     return;
   },

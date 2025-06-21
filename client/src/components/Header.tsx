@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import UserProfile from "@/components/UserProfile";
 
 export default function Header() {
   return (
@@ -7,18 +6,7 @@ export default function Header() {
       <span className="text-gray-300 font-thin text-sm">
         © 2025 All rights reserved
       </span>
-      <div className="flex gap-2 sm:gap-4">
-        <Link href="/login">
-          <Button className="uppercase border border-white rounded-lg px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
-            login
-          </Button>
-        </Link>
-        <Link href="/register">
-          <Button className="uppercase border border-white rounded-lg px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
-            register
-          </Button>
-        </Link>
-      </div>
+      <UserProfile />
       <div className="text-right text-xs text-gray-300">
         <div className="font-thin text-sm">
           Designed & Developed by

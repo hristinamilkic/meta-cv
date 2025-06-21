@@ -9,13 +9,14 @@ const router = express.Router();
 // Public routes
 router.post("/register", register);
 router.post("/login", userController.login);
+router.post("/logout", userController.logout);
 router.post("/forgot-password", userController.requestPasswordReset);
 router.post("/reset-password", userController.resetPassword);
 
 // Protected routes
 router.get("/me", requireAuth, userController.getCurrentUser);
-router.put("/profile", userController.updateProfile);
-router.put("/password", userController.changePassword);
+router.put("/profile", requireAuth, userController.updateProfile);
+router.put("/password", requireAuth, userController.changePassword);
 
 // Admin routes
 router.post("/create", requireAuth, requireAdmin, userController.createUser);

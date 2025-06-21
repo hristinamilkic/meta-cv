@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,10 +9,16 @@ const api = axios.create({
   },
 });
 
-// Add a request interceptor to add the auth token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token =
+      typeof window !== "undefined"
+        ? document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("token="))
+            ?.split("=")[1]
+        : null;
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,14 +29,15 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle common errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      if (typeof window !== "undefined") {
+        document.cookie =
+          "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
