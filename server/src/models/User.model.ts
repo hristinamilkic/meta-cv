@@ -93,7 +93,8 @@ userSchema.methods.comparePassword = async function (
 
 // Generate password reset token
 userSchema.methods.generatePasswordResetToken = function (): string {
-  const resetToken = crypto.randomBytes(32).toString("hex");
+  // Generate a 6-digit numeric code
+  const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
 
   this.resetPasswordToken = crypto
     .createHash("sha256")

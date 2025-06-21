@@ -280,13 +280,13 @@ const getCVAnalytics = async (req, res) => {
                 message: "Not authenticated",
             });
         }
-        const totalCVs = await cv_model_1.default.countDocuments({ user: req.user._id });
+        const totalCVs = await cv_model_1.default.countDocuments({ userId: req.user._id });
         const lastWeekCVs = await cv_model_1.default.countDocuments({
-            user: req.user._id,
+            userId: req.user._id,
             createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         });
         const templateUsage = await cv_model_1.default.aggregate([
-            { $match: { user: req.user._id } },
+            { $match: { userId: req.user._id } },
             { $group: { _id: "$template", count: { $sum: 1 } } },
             {
                 $lookup: {

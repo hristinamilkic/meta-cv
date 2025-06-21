@@ -655,9 +655,19 @@ export const userController = {
       const resetToken = user.generatePasswordResetToken();
       await user.save();
 
-      await emailService.sendPasswordResetEmail(email, resetToken);
-
-      res.json({ message: "Password reset email sent" });
+      // Send password reset email
+      try {
+        await emailService.sendPasswordResetEmail(email, resetToken);
+        res.json({
+          message: "Password reset email sent successfully",
+        });
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        res.status(500).json({
+          message:
+            "Error sending password reset email. Please try again later.",
+        });
+      }
     } catch (error) {
       console.error("Error requesting password reset:", error);
       res.status(500).json({ message: "Error requesting password reset" });
@@ -668,10 +678,17 @@ export const userController = {
   // Reset password
   async resetPassword(req: Request, res: Response) {
     try {
-      const { token, password } = req.body;
+      const { code, "new-password": newPassword } = req.body;
+
+      if (!code || !newPassword) {
+        return res.status(400).json({
+          message: "Code and new-password are required",
+        });
+      }
+
       const resetPasswordToken = crypto
         .createHash("sha256")
-        .update(token)
+        .update(code)
         .digest("hex");
 
       const user = await User.findOne({
@@ -682,12 +699,14 @@ export const userController = {
       if (!user) {
         return res
           .status(400)
-          .json({ message: "Invalid or expired reset token" });
+          .json({ message: "Invalid or expired reset code" });
       }
 
-      user.password = password;
+      // Set the new password
+      user.password = newPassword;
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
+
       await user.save();
 
       res.json({ message: "Password reset successful" });
