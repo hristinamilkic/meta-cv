@@ -1,57 +1,77 @@
 /// <reference lib="dom" />
 import puppeteer from "puppeteer";
-import { ICV } from "../interfaces/cv.interface";
 import { ITemplate } from "../interfaces/template.interface";
 
+interface CVDataForPDF {
+  personalDetails: Record<string, any>;
+  education: any[];
+  experience: any[];
+  skills: any[];
+  languages: any[];
+  projects: any[];
+  certifications: any[];
+  title?: string;
+}
+
 export class PDFService {
-  static async generatePDF(cv: ICV, template: ITemplate): Promise<Buffer> {
+  static async generatePDF(
+    cv: CVDataForPDF,
+    template: ITemplate
+  ): Promise<Buffer> {
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     try {
       const page = await browser.newPage();
-      await page.setContent(template.templateData.html, {
-        waitUntil: "networkidle0",
-      });
+      await page.setViewport({ width: 1200, height: 800 });
 
-      // Inject CV data into the template
-      await page.evaluate(
-        (cvData: Record<string, any>) => {
-          // Replace placeholders with actual data
-          const replacePlaceholders = (element: Element) => {
-            const placeholders = element.querySelectorAll("[data-cv-field]");
-            placeholders.forEach((placeholder: Element) => {
-              const field = placeholder.getAttribute("data-cv-field");
-              if (field && cvData[field]) {
-                placeholder.textContent = cvData[field];
-              }
-            });
-          };
+      const html = `
+        <html>
+          <head><title>CV</title></head>
+          <body style="font-family: Arial; padding: 20px;">
+            <h1>${cv.personalDetails?.fullName || "CV"}</h1>
+            <p>${cv.personalDetails?.email || ""}</p>
+            <p>${cv.personalDetails?.phone || ""}</p>
+            <p>${cv.personalDetails?.location || ""}</p>
+            ${
+              cv.personalDetails?.summary
+                ? `<p>${cv.personalDetails.summary}</p>`
+                : ""
+            }
+            ${
+              cv.experience
+                ?.map(
+                  (exp) =>
+                    `<p><strong>${exp.position}</strong> at ${exp.company}</p>`
+                )
+                .join("") || ""
+            }
+            ${
+              cv.education
+                ?.map(
+                  (edu) =>
+                    `<p><strong>${edu.degree}</strong> from ${edu.institution}</p>`
+                )
+                .join("") || ""
+            }
+            ${
+              cv.skills
+                ?.map((skill) => `<span>${skill.name || skill}</span>`)
+                .join(", ") || ""
+            }
+          </body>
+        </html>
+      `;
 
-          replacePlaceholders(document.body);
-        },
-        {
-          ...cv.personalDetails,
-          education: cv.education,
-          experience: cv.experience,
-          skills: cv.skills,
-          languages: cv.languages,
-          projects: cv.projects,
-          certifications: cv.certifications,
-        }
-      );
+      await page.setContent(html);
+      await page.waitForTimeout(1000);
 
       const pdfBuffer = await page.pdf({
         format: "A4",
         printBackground: true,
-        margin: {
-          top: "20px",
-          right: "20px",
-          bottom: "20px",
-          left: "20px",
-        },
+        margin: { top: "20px", right: "20px", bottom: "20px", left: "20px" },
       });
 
       return Buffer.from(pdfBuffer);

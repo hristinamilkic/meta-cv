@@ -1,15 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/user.model";
+import User, { IUser } from "../models/user.model";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    isAdmin: boolean;
-    isPremium: boolean;
-  };
+  user?: IUser;
 }
 
 export const requireAuth = async (
@@ -35,11 +31,7 @@ export const requireAuth = async (
       return res.status(401).json({ message: "User not found or inactive" });
     }
 
-    req.user = {
-      userId: decoded.userId,
-      isAdmin: decoded.isAdmin,
-      isPremium: decoded.isPremium,
-    };
+    req.user = user;
 
     next();
   } catch (error) {

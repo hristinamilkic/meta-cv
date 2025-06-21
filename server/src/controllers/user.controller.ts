@@ -254,14 +254,14 @@ export const login = async (req: Request, res: Response) => {
 
 export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.userId) {
+    if (!req.user?._id) {
       return res.status(401).json({
         success: false,
         message: "Not authenticated",
       });
     }
 
-    const user = await User.findById(req.user.userId).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -280,7 +280,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?.userId) {
+    if (!req.user?._id) {
       return res.status(401).json({
         success: false,
         message: "Not authenticated",
@@ -288,7 +288,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     }
 
     const { firstName, lastName, email } = req.body;
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
@@ -486,7 +486,7 @@ export const userController = {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      const user = await User.findById(req.user.userId).select("-password");
+      const user = await User.findById(req.user._id).select("-password");
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -574,7 +574,7 @@ export const userController = {
       }
 
       const { firstName, lastName, email } = req.body;
-      const user = await User.findById(req.user.userId);
+      const user = await User.findById(req.user._id);
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -618,7 +618,7 @@ export const userController = {
       }
 
       const { currentPassword, newPassword } = req.body;
-      const user = await User.findById(req.user.userId).select("+password");
+      const user = await User.findById(req.user._id).select("+password");
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });

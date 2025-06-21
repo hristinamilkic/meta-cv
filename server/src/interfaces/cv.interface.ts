@@ -1,4 +1,5 @@
-import { Document } from 'mongoose';
+import { Document } from "mongoose";
+import { ITemplate } from "src/interfaces/template.interface";
 
 export interface IEducation {
   institution: string;
@@ -22,12 +23,12 @@ export interface IExperience {
 
 export interface ISkill {
   name: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
 }
 
 export interface ILanguage {
   name: string;
-  proficiency: 'Basic' | 'Conversational' | 'Fluent' | 'Native';
+  proficiency: "Basic" | "Conversational" | "Fluent" | "Native";
 }
 
 export interface IProject {
@@ -63,6 +64,7 @@ export interface IPersonalDetails {
 export interface ICV extends Document {
   userId: string;
   title: string;
+  template?: string | ITemplate;
   personalDetails: IPersonalDetails;
   education: IEducation[];
   experience: IExperience[];
@@ -74,4 +76,4 @@ export interface ICV extends Document {
   lastModified: Date;
   createdAt: Date;
   updatedAt: Date;
-} 
+}

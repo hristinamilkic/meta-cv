@@ -40,11 +40,26 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Map client data structure to server structure
+    const personalDetails = data.personalDetails || data.personalInfo || {};
+    const title =
+      data.title ||
+      personalDetails.fullName ||
+      personalDetails.firstName ||
+      "Untitled CV";
+
     const cv = await CV.create({
-      user: req.user._id,
+      userId: req.user._id,
+      title,
+      personalDetails,
+      education: data.education || [],
+      experience: data.experience || [],
+      skills: data.skills || [],
+      languages: data.languages || [],
+      projects: data.projects || [],
+      certifications: data.certifications || [],
+      isPublic: data.isPublic ?? false,
       template: templateId,
-      data,
-      title: data.personalInfo?.fullName || "Untitled CV",
     });
 
     res.status(201).json({
@@ -70,7 +85,7 @@ export const getUserCVs = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const cvs = await CV.find({ user: req.user._id })
+    const cvs = await CV.find({ userId: req.user._id })
       .populate("template", "name thumbnail")
       .sort({ createdAt: -1 });
 
@@ -99,7 +114,7 @@ export const getCVById = async (req: AuthRequest, res: Response) => {
 
     const cv = await CV.findOne({
       _id: req.params.id,
-      user: req.user._id,
+      userId: req.user._id,
     }).populate("template");
 
     if (!cv) {
@@ -134,9 +149,32 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
 
     const { data, title } = req.body;
 
+    // Map client data structure to server structure
+    const updateData: any = {};
+
+    if (data) {
+      // Handle personal details mapping
+      if (data.personalDetails || data.personalInfo) {
+        updateData.personalDetails = data.personalDetails || data.personalInfo;
+      }
+
+      // Handle other fields
+      if (data.education) updateData.education = data.education;
+      if (data.experience) updateData.experience = data.experience;
+      if (data.skills) updateData.skills = data.skills;
+      if (data.languages) updateData.languages = data.languages;
+      if (data.projects) updateData.projects = data.projects;
+      if (data.certifications) updateData.certifications = data.certifications;
+      if (data.isPublic !== undefined) updateData.isPublic = data.isPublic;
+    }
+
+    if (title) {
+      updateData.title = title;
+    }
+
     const cv = await CV.findOneAndUpdate(
-      { _id: req.params.id, user: req.user._id },
-      { data, title },
+      { _id: req.params.id, userId: req.user._id },
+      updateData,
       { new: true }
     ).populate("template");
 
@@ -172,7 +210,7 @@ export const deleteCV = async (req: AuthRequest, res: Response) => {
 
     const cv = await CV.findOneAndDelete({
       _id: req.params.id,
-      user: req.user._id,
+      userId: req.user._id,
     });
 
     if (!cv) {
@@ -207,7 +245,7 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
 
     const cv = (await CV.findOne({
       _id: req.params.id,
-      user: req.user._id,
+      userId: req.user._id,
     }).populate("template")) as PopulatedCV | null;
 
     if (!cv) {
@@ -217,7 +255,6 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const cvData = cv.toObject();
     if (!cv.template) {
       return res.status(404).json({
         success: false,
@@ -225,16 +262,42 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Convert to plain object and ensure proper structure
+    const cvData = cv.toObject();
     const templateData = cv.template.toObject();
-    const pdfBuffer = await PDFService.generatePDF(cvData, templateData);
+
+    // Ensure all required fields exist
+    const structuredCVData = {
+      personalDetails: cvData.personalDetails || {},
+      education: cvData.education || [],
+      experience: cvData.experience || [],
+      skills: cvData.skills || [],
+      languages: cvData.languages || [],
+      projects: cvData.projects || [],
+      certifications: cvData.certifications || [],
+      title: cvData.title || "CV",
+    };
+
+    console.log("Generating PDF for CV:", cvData._id);
+    console.log("Template:", templateData.name);
+
+    const pdfBuffer = await PDFService.generatePDF(
+      structuredCVData,
+      templateData
+    );
+
+    // Sanitize filename for Content-Disposition header
+    let safeTitle = (cv.title || "CV").replace(/[^a-zA-Z0-9-_\. ]/g, "_");
+    if (!safeTitle.trim()) safeTitle = "CV";
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${cv.title}.pdf"`
+      `attachment; filename="${safeTitle}.pdf"`
     );
     res.send(pdfBuffer);
   } catch (error) {
+    console.error("Download CV error:", error);
     res.status(500).json({
       success: false,
       message: "Error generating PDF",
@@ -253,14 +316,14 @@ export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const totalCVs = await CV.countDocuments({ user: req.user._id });
+    const totalCVs = await CV.countDocuments({ userId: req.user._id });
     const lastWeekCVs = await CV.countDocuments({
-      user: req.user._id,
+      userId: req.user._id,
       createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     });
 
     const templateUsage = await CV.aggregate([
-      { $match: { user: req.user._id } },
+      { $match: { userId: req.user._id } },
       { $group: { _id: "$template", count: { $sum: 1 } } },
       {
         $lookup: {
