@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { IUser } from "../interfaces/user.interface";
-import CV from "../models/cv.model";
+import CV from "../models/CV.model";
 import { PDFService } from "../services/pdf.service";
 import templateModel from "../models/template.model";
 import { ICV } from "../interfaces/cv.interface";

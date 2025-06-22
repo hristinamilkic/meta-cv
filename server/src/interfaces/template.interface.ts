@@ -1,7 +1,7 @@
-import { Document } from 'mongoose';
+import { Document } from "mongoose";
 
 export interface SectionLayout {
-  position: 'left' | 'right' | 'full';
+  position: "left" | "right" | "full";
   order: number;
   width?: string;
   margin?: string;
@@ -38,6 +38,7 @@ export interface TemplateSections {
 
 export interface TemplateStyles {
   primaryColor: string;
+  colorOptions?: string[];
   secondaryColor: string;
   backgroundColor: string;
   fontFamily: string;
@@ -81,4 +82,4 @@ export interface ITemplate extends Document {
     lastUsed?: Date;
     rating?: number;
   };
-} 
+}

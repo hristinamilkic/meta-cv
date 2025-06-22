@@ -30,7 +30,7 @@ export class PDFService {
       const html = `
         <html>
           <head><title>CV</title></head>
-          <body style="font-family: Arial; padding: 20px;">
+          <body style="font-family: 'Montserrat', Arial, sans-serif; padding: 20px;">
             <h1>${cv.personalDetails?.fullName || "CV"}</h1>
             <p>${cv.personalDetails?.email || ""}</p>
             <p>${cv.personalDetails?.phone || ""}</p>

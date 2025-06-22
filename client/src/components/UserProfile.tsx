@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ProfileEditDialog from "./ProfileEditDialog";
+import { Icon } from "./Icon";
 
 export default function UserProfile() {
   const { user, logout } = useAuth();
@@ -46,12 +47,12 @@ export default function UserProfile() {
     return (
       <div className="flex gap-2 sm:gap-4">
         <Link href="/login">
-          <Button className="uppercase border border-white rounded-lg px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
+          <Button className="uppercase border border-white rounded-xl px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
             login
           </Button>
         </Link>
         <Link href="/register">
-          <Button className="uppercase border border-white rounded-lg px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
+          <Button className="uppercase border border-white rounded-xl px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
             register
           </Button>
         </Link>
@@ -64,28 +65,24 @@ export default function UserProfile() {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={toggleDropdown}
-          className="flex items-center space-x-2 uppercase border border-white rounded-lg px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition"
+          className="flex items-center space-x-5 bg-[hsl(var(--mc-background))] rounded-3xl px-3 sm:px-3 py-1 text-[hsl(var(--mc-secondary))] text-base sm:text-md font-medium hover:bg-white transition-all duration-300"
         >
-          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">
+          <div className="w-10 h-10 border-2 border-[hsl(var(--mc-secondary))] rounded-full flex items-center justify-center">
+            <span className="text-[hsl(var(--mc-secondary))] font-semibold text-sm">
               {user.firstName?.charAt(0) || ""}
               {user.lastName?.charAt(0) || ""}
             </span>
           </div>
-          <span className="hidden sm:block">{user.firstName || "User"}</span>
-          <svg
+          <div className="flex flex-col items-start">
+            <span className="hidden sm:block">
+              {user.firstName + " " + user.lastName || "User"}
+            </span>
+            <span className="hidden sm:block">{user.email || "User"}</span>
+          </div>
+          <Icon
+            name="cheveron"
             className={`w-4 h-4 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
 
         {isDropdownOpen && (
@@ -103,34 +100,65 @@ export default function UserProfile() {
             </div>
 
             <div className="py-1">
-              <Link
-                href="/dashboard"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                onClick={() => setIsDropdownOpen(false)}
-              >
-                <div className="flex items-center space-x-2">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"
-                    />
-                  </svg>
-                  <span>Dashboard</span>
-                </div>
-              </Link>
+              {user.isAdmin ? (
+                <Link
+                  href="/admin"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      ></path>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      ></path>
+                    </svg>
+                    <span>Admin Panel</span>
+                  </div>
+                </Link>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"
+                      />
+                    </svg>
+                    <span>Dashboard</span>
+                  </div>
+                </Link>
+              )}
 
               <button
                 onClick={openProfileDialog}
@@ -201,7 +229,6 @@ export default function UserProfile() {
               </Link>
             </div>
 
-  
             <div className="border-t border-gray-100 pt-1">
               <button
                 onClick={handleLogout}

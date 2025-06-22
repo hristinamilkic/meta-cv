@@ -22,7 +22,9 @@ export default function Footer() {
         <Link href="/" className="flex flex-col items-center">
           <Icon
             name="home"
-            className="h-8 w-8 sm:h-9 sm:w-9 object-contain hover:scale-110 transition-all duration-300"
+            className="h-8 w-8
+            
+            object-contain hover:scale-110 transition-all duration-300"
           />
           <span className="hidden sm:inline text-black">Home</span>
         </Link>
@@ -30,15 +32,15 @@ export default function Footer() {
         <Link href="/templates" className="flex flex-col items-center">
           <Icon
             name="template"
-            className="h-8 w-8 sm:h-9 sm:w-9 hover:scale-110 transition-all duration-300"
+            className="h-8 w-8 hover:scale-110 transition-all duration-300"
           />
           <span className="hidden sm:inline text-black">Templates</span>
         </Link>
         <div className="w-px bg-slate-300"></div>
-        <Link href="/build" className="flex flex-col items-center">
+        <Link href="/cv-builder" className="flex flex-col items-center">
           <Icon
             name="cv"
-            className="h-8 w-8 sm:h-9 sm:w-9 hover:scale-110 transition-all duration-300"
+            className="h-8 w-8 hover:scale-110 transition-all duration-300"
           />
           <span className="hidden sm:inline text-black">Build CV</span>
         </Link>

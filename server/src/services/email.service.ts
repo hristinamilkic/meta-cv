@@ -29,7 +29,7 @@ class EmailService {
       to: email,
       subject: "Password Reset Code - MetaCV",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="font-family: 'Montserrat', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #333; text-align: center;">Password Reset Request</h2>
           <p>You requested a password reset for your MetaCV account.</p>
           <p>Use the following code to reset your password:</p>

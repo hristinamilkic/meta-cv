@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 
 export async function POST() {
   try {
-    // Clear the token cookie
     (await cookies()).delete("token");
 
     return new NextResponse("Logged out successfully");

@@ -4,46 +4,44 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Icon } from "@/components/Icon";
+import Image from "next/image";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import api from "@/services/api";
 
 interface Template {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   category: string;
   thumbnail: string;
-  preview: string;
   isPremium?: boolean;
 }
+
+const colors = ["#4A90E2", "#D0021B", "#417505", "#F8E71C", "#F5A623"];
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { user } = useAuth();
   const router = useRouter();
-
-  const categories = [
-    { id: "all", name: "All Templates" },
-    { id: "professional", name: "Professional" },
-    { id: "creative", name: "Creative" },
-    { id: "modern", name: "Modern" },
-    { id: "minimal", name: "Minimal" },
-  ];
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const response = await fetch("/api/templates");
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.push("/login");
-            return;
-          }
-          throw new Error("Failed to fetch templates");
+        const response = await api.get("/api/templates");
+        if (response.data.success) {
+          setTemplates(response.data.data);
+        } else {
+          throw new Error(response.data.message || "Failed to fetch templates");
         }
-        const data = await response.json();
-        setTemplates(data);
       } catch (err) {
         console.error("Error fetching templates:", err);
         setError("Failed to load templates");
@@ -55,36 +53,15 @@ export default function TemplatesPage() {
     fetchTemplates();
   }, [router]);
 
-  const handleTemplateSelect = async (templateId: string) => {
-    try {
-      const response = await fetch("/api/cv/template", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ templateId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update template");
-      }
-
-      router.push("/cv-preview");
-    } catch (err) {
-      setError("Failed to update template");
-    }
+  const handleTemplateSelect = (templateId: string) => {
+    router.push(`/cv-builder?templateId=${templateId}`);
   };
-
-  const filteredTemplates =
-    selectedCategory === "all"
-      ? templates
-      : templates.filter((template) => template.category === selectedCategory);
 
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
         </div>
       </ProtectedRoute>
     );
@@ -93,8 +70,13 @@ export default function TemplatesPage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-red-500">{error}</div>
+        <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+          <div className="text-red-500 text-center">
+            <p className="text-lg font-semibold mb-2">
+              Error Loading Templates
+            </p>
+            <p className="text-sm text-gray-600">{error}</p>
+          </div>
         </div>
       </ProtectedRoute>
     );
@@ -102,91 +84,112 @@ export default function TemplatesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">CV Templates</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Choose a template for your professional CV
-            </p>
-          </div>
+      <div className="fixed inset-0 flex flex-col items-center justify-center text-white">
+     
+        <div className="w-full max-w-5xl px-4">
+          <Carousel
+            opts={{
+              align: "center",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {templates.map((template, index) => {
+                const isPremium = template.isPremium;
+                const isBasicUser = user ? !user.isPremium : true;
+                const showLock = isPremium && isBasicUser;
 
-          {/* Category Filter */}
-          <div className="mb-8">
-            <div className="flex space-x-4 overflow-x-auto pb-4">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    selectedCategory === category.id
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          </div>
+                return (
+                  <CarouselItem
+                    key={template._id}
+                    className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+                  >
+                    <div className="p-2 flex justify-center">
+                      <div className="group relative max-w-[280px] w-full">
+               
+                        <div
+                          className={`relative aspect-[9/16] rounded-2xl overflow-hidden transition-all duration-300 shadow-lg hover:shadow-2xl ${
+                            showLock
+                              ? "cursor-not-allowed"
+                              : "cursor-pointer hover:scale-105"
+                          }`}
+                          onClick={() =>
+                            !showLock && handleTemplateSelect(template._id)
+                          }
+                        >
+                          <Image
+                            src={template.thumbnail}
+                            alt={template.name}
+                            fill
+                            className={`object-cover transition-all duration-300 ${
+                              showLock
+                                ? "filter blur-sm"
+                                : "group-hover:scale-110"
+                            }`}
+                          />
 
-          {/* Templates Grid */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTemplates.map((template) => (
-              <div
-                key={template.id}
-                className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300"
-              >
-                <div className="aspect-w-16 aspect-h-9">
-                  <img
-                    src={template.thumbnail}
-                    alt={template.name}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = "/default-thumbnail.jpg";
-                    }}
-                  />
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {template.name}
-                    </h3>
-                    {template.isPremium && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        Premium
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {template.description}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                      {template.category}
-                    </span>
-                    <button
-                      onClick={() => handleTemplateSelect(template.id)}
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      Use Template
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                      
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute bottom-4 left-4 right-4">
+                              <h3 className="text-white font-bold text-lg mb-1">
+                                {template.name}
+                              </h3>
+                              <p className="text-gray-200 text-sm line-clamp-2">
+                                {template.description}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">
+                                  {template.category}
+                                </span>
+                                {isPremium && (
+                                  <span className="px-2 py-1 bg-yellow-500/80 rounded-full text-xs text-black font-semibold">
+                                    Premium
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-          {filteredTemplates.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                No templates found in this category.
-              </p>
-              <p className="text-sm text-gray-400 mt-2">
-                Check back later for new templates or try a different category.
-              </p>
-            </div>
-          )}
+                          {showLock && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <div className="text-center">
+                                <Icon
+                                  name="lock"
+                                  className="w-16 h-16 text-white mx-auto mb-2"
+                                />
+                                <p className="text-white font-semibold">
+                                  Premium Template
+                                </p>
+                                <p className="text-gray-300 text-sm">
+                                  Upgrade to access
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                  
+                        <div className="flex justify-center mt-4 space-x-2">
+                          {colors.map((color) => (
+                            <div
+                              key={color}
+                              className="w-3 h-3 rounded-full border border-white/20"
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+
+       
+            <CarouselPrevious className="left-4 h-12 w-12 bg-white/10 hover:bg-white/20 border-white/20 text-white" />
+            <CarouselNext className="right-4 h-12 w-12 bg-white/10 hover:bg-white/20 border-white/20 text-white" />
+          </Carousel>
         </div>
       </div>
     </ProtectedRoute>

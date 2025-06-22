@@ -71,18 +71,15 @@ const sampleTemplates = [
       primaryColor: "#2563eb",
       secondaryColor: "#1e40af",
       backgroundColor: "#ffffff",
-      fontFamily: "Arial, sans-serif",
+      fontFamily: "Montserrat, Arial, sans-serif",
       fontSize: "14px",
       spacing: "1.5rem",
       borderRadius: "4px",
       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
     },
     preview: {
-      thumbnail:
-        "https://via.placeholder.com/400x300/2563eb/ffffff?text=Professional+Classic",
-      previewImages: [
-        "https://via.placeholder.com/800x600/2563eb/ffffff?text=Professional+Classic+Preview",
-      ],
+      thumbnail: "/cv1.png",
+      previewImages: ["/cv1.png"],
     },
     templateData: {
       html: "<div class='cv-template'>Professional Classic Template HTML</div>",
@@ -148,18 +145,15 @@ const sampleTemplates = [
       primaryColor: "#ec4899",
       secondaryColor: "#be185d",
       backgroundColor: "#fdf2f8",
-      fontFamily: "Georgia, serif",
+      fontFamily: "Montserrat, Georgia, serif",
       fontSize: "16px",
       spacing: "2rem",
       borderRadius: "8px",
       boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
     },
     preview: {
-      thumbnail:
-        "https://via.placeholder.com/400x300/ec4899/ffffff?text=Creative+Modern",
-      previewImages: [
-        "https://via.placeholder.com/800x600/ec4899/ffffff?text=Creative+Modern+Preview",
-      ],
+      thumbnail: "/cv2.png",
+      previewImages: ["/cv2.png"],
     },
     templateData: {
       html: "<div class='cv-template'>Creative Modern Template HTML</div>",
@@ -219,18 +213,15 @@ const sampleTemplates = [
       primaryColor: "#374151",
       secondaryColor: "#6b7280",
       backgroundColor: "#ffffff",
-      fontFamily: "Helvetica, Arial, sans-serif",
+      fontFamily: "Montserrat, Helvetica, Arial, sans-serif",
       fontSize: "12px",
       spacing: "1rem",
       borderRadius: "0px",
       boxShadow: "none",
     },
     preview: {
-      thumbnail:
-        "https://via.placeholder.com/400x300/374151/ffffff?text=Minimal+Clean",
-      previewImages: [
-        "https://via.placeholder.com/800x600/374151/ffffff?text=Minimal+Clean+Preview",
-      ],
+      thumbnail: "/cv3.png",
+      previewImages: ["/cv3.png"],
     },
     templateData: {
       html: "<div class='cv-template'>Minimal Clean Template HTML</div>",

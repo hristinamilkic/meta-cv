@@ -1,6 +1,5 @@
 import express from "express";
-import { userController } from "../controllers/user.controller";
-import { register } from "../controllers/user.controller";
+import { userController, register } from "../controllers/user.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requireAdmin } from "../middleware/admin.middleware";
 

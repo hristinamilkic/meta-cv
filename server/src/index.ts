@@ -55,7 +55,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/templates", templateRoutes);
-app.use("/api/cvs", cvRoutes);
+app.use("/api/cv", cvRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

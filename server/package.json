@@ -1,5 +1,5 @@
 {
-  "name": "meta-cv-server",
+  "name": "server",
   "version": "1.0.0",
   "description": "Backend server for Meta CV application",
   "main": "dist/index.js",

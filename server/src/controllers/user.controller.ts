@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/user.model";
+import User from "../models/User.model";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { emailService } from "../services/email.service";
@@ -725,7 +725,6 @@ export const userController = {
     return;
   },
 
-  
   async logout(req: Request, res: Response) {
     try {
       res.clearCookie("token", {

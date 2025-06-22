@@ -9,9 +9,18 @@ interface AuthRequest extends Request {
 export const templateController = {
   async getTemplates(req: AuthRequest, res: Response) {
     try {
-      const templates = await Template.find()
-        .select("name thumbnail isPremium description")
-        .sort({ isPremium: 1, name: 1 });
+      const templatesFromDb = await Template.find()
+        .select("name preview isPremium description")
+        .sort({ isPremium: 1, name: 1 })
+        .lean();
+
+      const templates = templatesFromDb.map((t) => ({
+        _id: t._id,
+        name: t.name,
+        isPremium: t.isPremium,
+        description: t.description,
+        thumbnail: t.preview?.thumbnail || "",
+      }));
 
       res.json({
         success: true,
@@ -37,19 +46,8 @@ export const templateController = {
         });
       }
 
-      if (template.isPremium && (!req.user || !req.user.isPremium)) {
-        return res.json({
-          success: true,
-          data: {
-            _id: template._id,
-            name: template.name,
-            isPremium: true,
-            description: template.description,
-            preview: template.preview,
-          },
-        });
-      }
-
+      // Always return the full template data when fetching a specific template
+      // since the user has already selected it and needs the templateData for building
       res.json({
         success: true,
         data: template,

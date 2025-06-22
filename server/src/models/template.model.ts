@@ -99,6 +99,9 @@ const TemplateStylesSchema = new Schema(
       type: String,
       required: true,
     },
+    colorOptions: {
+      type: [String],
+    },
     secondaryColor: {
       type: String,
       required: true,

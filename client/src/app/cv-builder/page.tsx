@@ -1,574 +1,351 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import api from "@/services/api";
+import { ICV } from "@/interfaces/cv.interface";
 
-interface CVData {
-  personalInfo: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    location: string;
+type CVFormData = Omit<
+  ICV,
+  "_id" | "userId" | "template" | "lastModified" | "createdAt" | "updatedAt"
+>;
+
+interface Template {
+  _id: string;
+  name: string;
+  templateData: {
+    html: string;
+    css: string;
   };
-  education: Array<{
-    institution: string;
-    degree: string;
-    field: string;
-    startDate: string;
-    endDate: string;
-  }>;
-  experience: Array<{
-    company: string;
-    position: string;
-    startDate: string;
-    endDate: string;
-    description: string;
-  }>;
-  skills: string[];
+  styles: {
+    primaryColor: string;
+    secondaryColor: string;
+    backgroundColor: string;
+    fontFamily: string;
+    fontSize: string;
+    spacing: string;
+    borderRadius: string;
+    boxShadow: string;
+    colorOptions?: string[];
+    customStyles?: Record<string, string>;
+  };
+}
+
+const initialCVData: CVFormData = {
+  title: "Untitled CV",
+  personalDetails: {
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    website: "",
+    summary: "",
+  },
+  experience: [],
+  education: [],
+  skills: [],
+  languages: [],
+  projects: [],
+  certifications: [],
+  isPublic: false,
+};
+
+function stylesToCssVars(styles: Template["styles"]) {
+  const cssVars = [];
+
+  // Convert camelCase to kebab-case and create CSS variables
+  if (styles.primaryColor)
+    cssVars.push(`--primary-color: ${styles.primaryColor};`);
+  if (styles.secondaryColor)
+    cssVars.push(`--secondary-color: ${styles.secondaryColor};`);
+  if (styles.backgroundColor)
+    cssVars.push(`--background-color: ${styles.backgroundColor};`);
+  if (styles.fontFamily) cssVars.push(`--font-family: ${styles.fontFamily};`);
+  if (styles.fontSize) cssVars.push(`--font-size: ${styles.fontSize};`);
+  if (styles.spacing) cssVars.push(`--spacing: ${styles.spacing};`);
+  if (styles.borderRadius)
+    cssVars.push(`--border-radius: ${styles.borderRadius};`);
+  if (styles.boxShadow) cssVars.push(`--box-shadow: ${styles.boxShadow};`);
+
+  // Add custom styles if they exist
+  if (styles.customStyles) {
+    Object.entries(styles.customStyles).forEach(([key, value]) => {
+      const cssVarName = `--${key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}`;
+      cssVars.push(`${cssVarName}: ${value};`);
+    });
+  }
+
+  return cssVars.join("\n");
 }
 
 export default function CVBuilderPage() {
-  const [cvData, setCvData] = useState<CVData>({
-    personalInfo: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      location: "",
-    },
-    education: [],
-    experience: [],
-    skills: [],
-  });
+  const [cvData, setCvData] = useState<CVFormData>(initialCVData);
+  const [template, setTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [renderKey, setRenderKey] = useState(0); // For forcing iframe re-render
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const templateId = searchParams.get("templateId");
+  const cvId = searchParams.get("cvId");
 
   useEffect(() => {
-    const fetchCVData = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("/api/cv");
-        if (response.ok) {
-          const data = await response.json();
-          setCvData(data);
+        console.log(
+          "Fetching data with cvId:",
+          cvId,
+          "templateId:",
+          templateId
+        );
+
+        if (cvId) {
+          console.log("Fetching CV with ID:", cvId);
+          const cvResponse = await api.get(`/api/cv/${cvId}`);
+          console.log("Full CV API response:", cvResponse);
+
+          if (!cvResponse.data.success)
+            throw new Error("Failed to load existing CV data.");
+          const existingCv = cvResponse.data.data;
+          console.log("CV response data:", existingCv);
+
+          const { userId, template: cvTemplate, _id, ...restOfCv } = existingCv;
+          console.log("Template from CV:", cvTemplate);
+          console.log("Rest of CV data:", restOfCv);
+
+          setCvData(restOfCv);
+          setTemplate(cvTemplate);
+        } else if (templateId) {
+          console.log("Fetching template with ID:", templateId);
+          const templateResponse = await api.get(
+            `/api/templates/${templateId}`
+          );
+          console.log("Full template API response:", templateResponse);
+
+          if (!templateResponse.data.success)
+            throw new Error("Failed to load template data.");
+          console.log("Template response data:", templateResponse.data.data);
+          setTemplate(templateResponse.data.data);
+        } else {
+          console.log("No cvId or templateId, redirecting to templates");
+          router.push("/templates");
+          return;
         }
-      } catch (err) {
-        setError("Failed to load CV data");
+      } catch (err: any) {
+        console.error("Error in fetchData:", err);
+        setError(err.message || "An error occurred.");
       } finally {
         setLoading(false);
       }
     };
+    fetchData();
+  }, [cvId, templateId, router]);
 
-    fetchCVData();
-  }, []);
-
-  const handlePersonalInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDynamicChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    section: keyof CVFormData,
+    index?: number
+  ) => {
     const { name, value } = e.target;
-    setCvData((prev) => ({
-      ...prev,
-      personalInfo: {
-        ...prev.personalInfo,
-        [name]: value,
-      },
-    }));
-  };
-
-  const handleEducationChange = (
-    index: number,
-    field: string,
-    value: string
-  ) => {
     setCvData((prev) => {
-      const newEducation = [...prev.education];
-      newEducation[index] = {
-        ...newEducation[index],
-        [field]: value,
-      };
-      return {
-        ...prev,
-        education: newEducation,
-      };
-    });
-  };
-
-  const addEducation = () => {
-    setCvData((prev) => ({
-      ...prev,
-      education: [
-        ...prev.education,
-        {
-          institution: "",
-          degree: "",
-          field: "",
-          startDate: "",
-          endDate: "",
-        },
-      ],
-    }));
-  };
-
-  const removeEducation = (index: number) => {
-    setCvData((prev) => ({
-      ...prev,
-      education: prev.education.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleExperienceChange = (
-    index: number,
-    field: string,
-    value: string
-  ) => {
-    setCvData((prev) => {
-      const newExperience = [...prev.experience];
-      newExperience[index] = {
-        ...newExperience[index],
-        [field]: value,
-      };
-      return {
-        ...prev,
-        experience: newExperience,
-      };
-    });
-  };
-
-  const addExperience = () => {
-    setCvData((prev) => ({
-      ...prev,
-      experience: [
-        ...prev.experience,
-        {
-          company: "",
-          position: "",
-          startDate: "",
-          endDate: "",
-          description: "",
-        },
-      ],
-    }));
-  };
-
-  const removeExperience = (index: number) => {
-    setCvData((prev) => ({
-      ...prev,
-      experience: prev.experience.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleSkillsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const skills = e.target.value.split(",").map((skill) => skill.trim());
-    setCvData((prev) => ({
-      ...prev,
-      skills,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    try {
-      const response = await fetch("/api/cv", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cvData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save CV data");
+      const newData = JSON.parse(JSON.stringify(prev)); // Deep copy
+      if (index !== undefined && Array.isArray(newData[section])) {
+        (newData[section] as any[])[index][name] = value;
+      } else if (section === "personalDetails") {
+        (newData[section] as any)[name] = value;
+      } else {
+        newData[name] = value;
       }
+      return newData;
+    });
+    // Force iframe re-render for real-time preview
+    setRenderKey((prev) => prev + 1);
+  };
 
-      setSuccess("CV data saved successfully");
-    } catch (err) {
-      setError("Failed to save CV data");
+  const addSectionItem = (section: keyof CVFormData) => {
+    const newItem: any = {
+      experience: { company: "", position: "" },
+      education: { institution: "", degree: "" },
+      skills: { name: "", level: "Intermediate" },
+      languages: { name: "", proficiency: "Conversational" },
+      projects: { name: "" },
+      certifications: { name: "", issuer: "" },
+    }[section as string];
+    if (newItem) {
+      setCvData((prev) => ({
+        ...prev,
+        [section]: [...(prev[section] as any[]), newItem],
+      }));
     }
   };
 
-  if (loading) {
+  const generatePreviewHtml = useCallback(() => {
+    if (!template) return "";
+
+    console.log("Template received:", template);
+    console.log("Template structure:", {
+      hasTemplateData: !!template.templateData,
+      templateDataKeys: template.templateData
+        ? Object.keys(template.templateData)
+        : "undefined",
+      hasStyles: !!template.styles,
+      stylesKeys: template.styles ? Object.keys(template.styles) : "undefined",
+    });
+
+    // Handle different possible template structures
+    let templateData = template.templateData;
+    let styles = template.styles;
+
+    // If templateData is not at the root level, try to find it
+    if (!templateData && template.data) {
+      templateData = template.data;
+    }
+
+    // If styles is not at the root level, try to find it
+    if (!styles && template.style) {
+      styles = template.style;
+    }
+
+    // Add null checks to prevent errors
+    if (!templateData || !templateData.css || !templateData.html) {
+      console.error("Missing template data:", { template, templateData });
+      return "<html><body><p>Template data not available</p></body></html>";
+    }
+
+    const cssVars = styles ? `:root {${stylesToCssVars(styles)}}` : "";
+    const css = `${cssVars}\n${templateData.css}`;
+
+    let html = templateData.html;
+    for (const [key, value] of Object.entries(cvData.personalDetails)) {
+      html = html.replaceAll(`{{personalDetails.${key}}}`, String(value || ""));
+    }
+    // This simplified loop doesn't handle nested arrays like experience. A real templating engine is needed for that.
+
+    return `<html><head><style>${css}</style></head><body>${html}</body></html>`;
+  }, [template, cvData]);
+
+  const handleFinishBuild = async () => {
+    const payload = {
+      templateId: template?._id,
+      data: cvData,
+      title: cvData.title,
+    };
+    try {
+      const response = cvId
+        ? await api.put(`/api/cv/${cvId}`, payload)
+        : await api.post("/api/cv", payload);
+
+      if (!response.data.success)
+        throw new Error(response.data.message || "Failed to save CV");
+      const savedCv = response.data.data;
+      router.push(`/cv-preview?cvId=${savedCv._id}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to save CV.");
+    }
+  };
+
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        Loading...
       </div>
     );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">CV Builder</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Create and edit your professional CV
-          </p>
+    <div className="flex h-screen">
+      <div className="w-1/2 h-full overflow-y-auto p-8 bg-white shadow-lg space-y-8">
+        <h1 className="text-3xl font-bold">Build Your CV</h1>
+        {error && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+
+        <input
+          type="text"
+          name="title"
+          placeholder="CV Title"
+          value={cvData.title}
+          onChange={(e) => handleDynamicChange(e, "title" as any)}
+          className="w-full p-2 border rounded"
+        />
+
+        <div>
+          <h2 className="text-2xl font-semibold mb-4 border-b pb-2">
+            Personal Information
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              name="fullName"
+              placeholder="Full Name"
+              value={cvData.personalDetails.fullName || ""}
+              onChange={(e) => handleDynamicChange(e, "personalDetails")}
+              className="w-full p-2 border rounded col-span-2"
+            />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={cvData.personalDetails.email || ""}
+              onChange={(e) => handleDynamicChange(e, "personalDetails")}
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone"
+              value={cvData.personalDetails.phone || ""}
+              onChange={(e) => handleDynamicChange(e, "personalDetails")}
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="text"
+              name="location"
+              placeholder="Location"
+              value={cvData.personalDetails.location || ""}
+              onChange={(e) => handleDynamicChange(e, "personalDetails")}
+              className="w-full p-2 border rounded col-span-2"
+            />
+            <input
+              type="text"
+              name="website"
+              placeholder="Website/LinkedIn"
+              value={cvData.personalDetails.website || ""}
+              onChange={(e) => handleDynamicChange(e, "personalDetails")}
+              className="w-full p-2 border rounded col-span-2"
+            />
+            <textarea
+              name="summary"
+              placeholder="Summary"
+              value={cvData.personalDetails.summary || ""}
+              onChange={(e) => handleDynamicChange(e, "personalDetails")}
+              className="w-full p-2 border rounded col-span-2"
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
+        {/* All other form sections would be rendered here in a similar fashion */}
 
-          {success && (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="text-sm text-green-700">{success}</div>
-            </div>
-          )}
-
-          {/* Personal Information */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">
-              Personal Information
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  id="firstName"
-                  value={cvData.personalInfo.firstName}
-                  onChange={handlePersonalInfoChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  id="lastName"
-                  value={cvData.personalInfo.lastName}
-                  onChange={handlePersonalInfoChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  id="email"
-                  value={cvData.personalInfo.email}
-                  onChange={handlePersonalInfoChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  id="phone"
-                  value={cvData.personalInfo.phone}
-                  onChange={handlePersonalInfoChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="location"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  id="location"
-                  value={cvData.personalInfo.location}
-                  onChange={handlePersonalInfoChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Education */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Education</h2>
-              <button
-                type="button"
-                onClick={addEducation}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Add Education
-              </button>
-            </div>
-            {cvData.education.map((edu, index) => (
-              <div key={index} className="border-t border-gray-200 pt-4 mt-4">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-md font-medium text-gray-900">
-                    Education Entry {index + 1}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => removeEducation(index)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Institution
-                    </label>
-                    <input
-                      type="text"
-                      value={edu.institution}
-                      onChange={(e) =>
-                        handleEducationChange(
-                          index,
-                          "institution",
-                          e.target.value
-                        )
-                      }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Degree
-                    </label>
-                    <input
-                      type="text"
-                      value={edu.degree}
-                      onChange={(e) =>
-                        handleEducationChange(index, "degree", e.target.value)
-                      }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Field of Study
-                    </label>
-                    <input
-                      type="text"
-                      value={edu.field}
-                      onChange={(e) =>
-                        handleEducationChange(index, "field", e.target.value)
-                      }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Start Date
-                      </label>
-                      <input
-                        type="date"
-                        value={edu.startDate}
-                        onChange={(e) =>
-                          handleEducationChange(
-                            index,
-                            "startDate",
-                            e.target.value
-                          )
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        value={edu.endDate}
-                        onChange={(e) =>
-                          handleEducationChange(
-                            index,
-                            "endDate",
-                            e.target.value
-                          )
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Experience */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">
-                Work Experience
-              </h2>
-              <button
-                type="button"
-                onClick={addExperience}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Add Experience
-              </button>
-            </div>
-            {cvData.experience.map((exp, index) => (
-              <div key={index} className="border-t border-gray-200 pt-4 mt-4">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-md font-medium text-gray-900">
-                    Experience Entry {index + 1}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => removeExperience(index)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Company
-                    </label>
-                    <input
-                      type="text"
-                      value={exp.company}
-                      onChange={(e) =>
-                        handleExperienceChange(index, "company", e.target.value)
-                      }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Position
-                    </label>
-                    <input
-                      type="text"
-                      value={exp.position}
-                      onChange={(e) =>
-                        handleExperienceChange(
-                          index,
-                          "position",
-                          e.target.value
-                        )
-                      }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Start Date
-                      </label>
-                      <input
-                        type="date"
-                        value={exp.startDate}
-                        onChange={(e) =>
-                          handleExperienceChange(
-                            index,
-                            "startDate",
-                            e.target.value
-                          )
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        value={exp.endDate}
-                        onChange={(e) =>
-                          handleExperienceChange(
-                            index,
-                            "endDate",
-                            e.target.value
-                          )
-                        }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Description
-                    </label>
-                    <textarea
-                      value={exp.description}
-                      onChange={(e) =>
-                        handleExperienceChange(
-                          index,
-                          "description",
-                          e.target.value
-                        )
-                      }
-                      rows={3}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Skills */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Skills</h2>
-            <div>
-              <label
-                htmlFor="skills"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Skills (comma-separated)
-              </label>
-              <textarea
-                id="skills"
-                value={cvData.skills.join(", ")}
-                onChange={handleSkillsChange}
-                rows={3}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                placeholder="e.g., JavaScript, React, Node.js, Python"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Save CV
-            </button>
-          </div>
-        </form>
+        <Button onClick={handleFinishBuild} className="w-full mt-8">
+          Save & Finish
+        </Button>
+      </div>
+      <div className="w-1/2 h-full p-8">
+        <div className="h-full bg-white shadow-xl rounded-lg">
+          <iframe
+            key={renderKey}
+            srcDoc={generatePreviewHtml()}
+            title="CV Preview"
+            className="w-full h-full border-0"
+          />
+        </div>
       </div>
     </div>
   );
