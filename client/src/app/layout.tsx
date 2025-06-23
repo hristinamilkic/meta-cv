@@ -13,8 +13,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "CV Builder",
-  description: "Create and manage your professional CV",
+  title: "META CV",
+  description: "Create and manage your professional CV with META CV",
 };
 
 export default function RootLayout({

@@ -110,6 +110,13 @@ class AuthService {
     if (typeof window === "undefined") return;
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   }
+
+  async verifyResetCode(
+    code: string
+  ): Promise<{ valid: boolean; message?: string }> {
+    const response = await api.post("/api/users/verify-reset-code", { code });
+    return response.data;
+  }
 }
 
 export const authService = new AuthService();

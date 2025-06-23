@@ -741,4 +741,34 @@ export const userController = {
     }
     return;
   },
+
+  async verifyResetCode(req: Request, res: Response) {
+    try {
+      const { code } = req.body;
+      if (!code) {
+        return res
+          .status(400)
+          .json({ valid: false, message: "Code is required" });
+      }
+      const resetPasswordToken = crypto
+        .createHash("sha256")
+        .update(code)
+        .digest("hex");
+      const user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpire: { $gt: Date.now() },
+      });
+      if (!user) {
+        return res
+          .status(400)
+          .json({ valid: false, message: "Invalid or expired reset code" });
+      }
+      return res.json({ valid: true });
+    } catch (error) {
+      console.error("Error verifying reset code:", error);
+      return res
+        .status(500)
+        .json({ valid: false, message: "Error verifying reset code" });
+    }
+  },
 };

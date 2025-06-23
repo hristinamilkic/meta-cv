@@ -22,6 +22,7 @@ export interface AuthContextType {
   changePassword: (data: ChangePasswordData) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   clearError: () => void;
+  verifyResetCode: (code: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -184,6 +185,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setError(null);
   };
 
+  const verifyResetCode = async (code: string) => {
+    try {
+      setError(null);
+      return await authService.verifyResetCode(code);
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to verify code";
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -196,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     changePassword,
     updateProfile,
     clearError,
+    verifyResetCode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

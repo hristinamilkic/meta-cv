@@ -11,6 +11,7 @@ router.post("/login", userController.login);
 router.post("/logout", userController.logout);
 router.post("/forgot-password", userController.requestPasswordReset);
 router.post("/reset-password", userController.resetPassword);
+router.post("/verify-reset-code", userController.verifyResetCode);
 
 // Protected routes
 router.get("/me", requireAuth, userController.getCurrentUser);

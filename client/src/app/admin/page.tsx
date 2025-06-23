@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import api from "@/services/api";
 
-// Define interfaces for the data
 interface User {
   _id: string;
   firstName: string;
@@ -59,7 +58,6 @@ interface DataTableProps<T extends { _id: string }> {
   onDelete: (item: T) => void;
 }
 
-// Reusable Table Component
 const DataTable = <T extends { _id: string }>({
   data,
   columns,
@@ -90,7 +88,7 @@ const DataTable = <T extends { _id: string }>({
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 w-full text-white">
+    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 w-full text-white border border-white/40">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">{title}</h2>
         <div className="flex items-center gap-4">
@@ -206,7 +204,6 @@ const DataTable = <T extends { _id: string }>({
   );
 };
 
-// Main Admin Page Component
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -261,7 +258,7 @@ export default function AdminPage() {
 
     try {
       await api.delete(endpoint);
-      fetchData(); // Refetch all data
+      fetchData();
     } catch (error) {
       console.error("Failed to delete entity:", error);
       alert("Deletion failed. See console for details.");
@@ -339,7 +336,7 @@ export default function AdminPage() {
       <div className="min-h-[85vh] flex items-center justify-center p-4">
         <div className="w-full max-w-7xl mx-auto flex gap-8">
           <aside className="w-1/4">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex flex-col gap-2">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex flex-col gap-2 border border-white/40">
               {sidebarItems.map((item) => (
                 <Button
                   key={item}
@@ -373,7 +370,6 @@ export default function AdminPage() {
               {editingEntity ? "Update" : "Add"} {activeView.slice(0, -1)}
             </DialogTitle>
           </DialogHeader>
-          {/* Form will go here */}
           <p>Form placeholder for {activeView}</p>
           <DialogFooter>
             <DialogClose asChild>
