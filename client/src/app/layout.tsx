@@ -24,13 +24,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className={montserrat.className}>
+      <body className={montserrat.className + " min-h-screen flex flex-col"}>
         <AuthProvider>
           <div className="fixed inset-0 -z-10 bg-[linear-gradient(200deg,_hsl(var(--mc-primary))_0%,_hsl(var(--mc-secondary))_30%,_hsl(var(--mc-warm))_95%)]" />
           <RandomCirclesOverlay />
           <RandomCirclesOverlay2 />
           <Header />
-          <main className="flex-1 flex flex-col">{children}</main>
+          <main className="flex-1 flex flex-col w-full px-2 sm:px-0">
+            {children}
+          </main>
           <Footer />
         </AuthProvider>
       </body>

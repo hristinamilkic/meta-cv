@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   InputOTP,
   InputOTPGroup,
+  InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 
@@ -50,10 +51,10 @@ export default function ResetPasswordPage() {
     }
     try {
       const result = await verifyResetCode(formData.code);
-      if (result.valid) {
+      if (result === true) {
         setOtpStep(false);
       } else {
-        setErrors({ code: result.message || "Invalid or expired code." });
+        setErrors({ code: "Invalid or expired code." });
       }
     } catch (err: any) {
       setErrors({ code: err?.message || "Invalid or expired code." });
@@ -94,7 +95,7 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthLayout
-      title="Reset Password"
+      title="RESET PASSWORD"
       subtitle={
         otpStep ? "Enter the code from your email." : "Set your new password."
       }
@@ -139,7 +140,7 @@ export default function ResetPasswordPage() {
           </div>
         </div>
       ) : otpStep ? (
-        <form className="space-y-6 w-full" onSubmit={handleVerifyOTP}>
+        <form className="space-y-5 w-full" onSubmit={handleVerifyOTP}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-700">{error}</div>
@@ -151,30 +152,29 @@ export default function ResetPasswordPage() {
               value={formData.code}
               onChange={handleOTPChange}
             >
-              <InputOTPGroup>
+              <InputOTPGroup className="text-white">
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
                 <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator className="text-white" />
+              <InputOTPGroup className="text-white">
                 <InputOTPSlot index={3} />
                 <InputOTPSlot index={4} />
                 <InputOTPSlot index={5} />
               </InputOTPGroup>
             </InputOTP>
             {errors.code && (
-              <p className="mt-1 text-sm text-red-600">{errors.code}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.code}</p>
             )}
           </div>
-          <Button
-            type="submit"
-            disabled={otpLoading}
-            className="w-full text-lg font-semibold bg-[#f7a18e] hover:bg-[#e78a7a] text-white py-3 rounded-xl shadow-md transition"
-          >
-            {otpLoading ? <span>Verifying...</span> : "Verify"}
+          <Button type="submit" disabled={otpLoading}>
+            {otpLoading ? <span>Verifying...</span> : "VERIFY CODE"}
           </Button>
           <div className="text-center mt-2">
             <Link
               href="/forgot-password"
-              className="font-medium text-[#fff3e6] underline"
+              className="font-medium text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] underline transition-all duration-300"
             >
               Request new code
             </Link>
@@ -182,7 +182,7 @@ export default function ResetPasswordPage() {
           <div className="text-center mt-2">
             <Link
               href="/login"
-              className="font-medium text-[#fff3e6] underline"
+              className="font-medium text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] underline transition-all duration-300"
             >
               Back to login
             </Link>
@@ -208,7 +208,7 @@ export default function ResetPasswordPage() {
               onChange={handleChange}
             />
             {errors["new-password"] && (
-              <p className="mt-1 text-sm text-red-600">
+              <p className="mt-1 text-sm text-red-500">
                 {errors["new-password"]}
               </p>
             )}
@@ -226,7 +226,7 @@ export default function ResetPasswordPage() {
               onChange={handleChange}
             />
             {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">
+              <p className="mt-1 text-sm text-red-500">
                 {errors.confirmPassword}
               </p>
             )}

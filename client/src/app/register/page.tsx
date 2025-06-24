@@ -79,7 +79,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <AuthLayout title="Register" subtitle="Create your account">
+    <AuthLayout title="REGISTER" subtitle="Create your account">
       <form className="space-y-6 w-full" onSubmit={handleSubmit}>
         {error && (
           <div className="rounded-md bg-red-50 p-4">
@@ -100,7 +100,7 @@ export default function RegisterPage() {
               onChange={handleChange}
             />
             {errors.firstName && (
-              <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.firstName}</p>
             )}
           </div>
           <div>
@@ -116,7 +116,7 @@ export default function RegisterPage() {
               onChange={handleChange}
             />
             {errors.lastName && (
-              <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+              <p className="mt-1 text-sm text-red-500">{errors.lastName}</p>
             )}
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function RegisterPage() {
             onChange={handleChange}
           />
           {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.email}</p>
           )}
         </div>
         <div>
@@ -149,7 +149,7 @@ export default function RegisterPage() {
             onChange={handleChange}
           />
           {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.password}</p>
           )}
         </div>
         <div>
@@ -165,22 +165,21 @@ export default function RegisterPage() {
             onChange={handleChange}
           />
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">
+            <p className="mt-1 text-sm text-red-500">
               {errors.confirmPassword}
             </p>
           )}
         </div>
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full text-lg font-semibold bg-[#f7a18e] hover:bg-[#e78a7a] text-white py-3 rounded-xl shadow-md transition"
-        >
+        <Button type="submit" disabled={loading}>
           {loading ? <span>Creating account...</span> : "Register"}
         </Button>
         <div className="flex flex-col items-center gap-2 mt-2">
-          <div className="text-sm text-[#fff3e6]">
+          <div className="text-sm text-[hsl(var(--mc-background))]">
             Already have an account?{" "}
-            <Link href="/login" className="underline hover:text-[#f7a18e]">
+            <Link
+              href="/login"
+              className="underline font-medium hover:text-[hsl(var(--mc-accent))] transition-all duration-300"
+            >
               Login
             </Link>
           </div>

@@ -4,8 +4,8 @@ import { Icon } from "./Icon";
 export default function Footer() {
   return (
     <div
-      className="fixed bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-[hsl(var(--mc-background))]
- rounded-3xl shadow-xl flex flex-row justify-between items-center px-3 sm:px-7 py-2 sm:py-2 gap-4 sm:gap-8 z-10 w-[100vw] max-w-3xl"
+      className="fixed bottom-8 sm:bottom-4 left-1/2 -translate-x-1/2 bg-[hsl(var(--mc-background))]
+  rounded-3xl shadow-xl flex flex-row justify-between items-center px-5 sm:px-7 py-2 sm:py-2 gap-4 sm:gap-8 z-10 w-[85vw] sm:w-[100vw] max-w-3xl sm:mx-4"
     >
       <Link
         href="/"
@@ -17,7 +17,6 @@ export default function Footer() {
           className="h-12 sm:h-16 object-contain"
         />
       </Link>
-
       <div className="flex flex-row gap-3 sm:gap-6 text-sm sm:text-base font-light">
         <Link href="/" className="flex flex-col items-center">
           <Icon

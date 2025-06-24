@@ -33,21 +33,30 @@ export default function Header() {
 
   const isHomePage = pathname === "/";
 
+  const authPages = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+  ];
+  const isAuthPage = authPages.includes(pathname);
+
   return (
-    <header className="absolute top-0 left-0 z-50 w-full bg-transparent shadow-none border-none flex justify-between items-center px-4 sm:px-8 py-2 sm:py-4">
+    <header className="absolute top-0 left-0 z-50 w-full bg-transparent shadow-none border-none flex flex-wrap justify-between items-center px-2 sm:px-8 py-2 sm:py-4 gap-y-2">
       <span
-        className={`${isHomePage ? "text-gray-300 font-thin text-sm" : "text-white font-normal text-2xl"}`}
+        className={`${isHomePage ? "text-gray-300 font-thin text-xs sm:text-sm" : "text-[hsl(var(--mc-background))] font-normal text-2xl sm:text-3xl tracking-wide"}`}
       >
         {getPageTitle()}
       </span>
 
-      {/* Centered UserProfile */}
-      <div className="absolute left-1/2 mt-4 transform -translate-x-1/2">
-        <UserProfile />
-      </div>
+      {!isAuthPage && (
+        <div className="relative top-10 sm:top-2 sm:absolute sm:left-1/2 sm:mt-4 sm:transform sm:-translate-x-1/2 w-full sm:w-auto flex justify-center order-3 sm:order-none">
+          <UserProfile />
+        </div>
+      )}
 
-      <div className="text-right text-xs text-gray-300">
-        <div className="font-thin text-sm">
+      <div className="text-right text-gray-300 font-thin text-xs sm:text-sm">
+        <div className="font-thin text-xs sm:text-sm">
           Designed & Developed by
           <br />
           Hristina Milkić

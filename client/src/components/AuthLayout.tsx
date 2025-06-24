@@ -15,29 +15,29 @@ export default function AuthLayout({
   title,
   subtitle,
   children,
-  imageSrc = "/cv2.png",
+  imageSrc = "/cv2.jpg",
   bottomLinks,
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-gradient-to-br from-[#6e256d] to-[#e7a18e] relative">
+    <div className="min-h-screen flex flex-col justify-between relative">
       <div className="flex flex-1 items-center justify-center w-full max-w-6xl mx-auto py-8">
-        {/* Left: Form */}
-        <div className="flex-1 flex flex-col justify-center items-center px-8 max-w-md">
-          <div className="w-full">
-            <h1 className="text-5xl font-extrabold text-[#fff3e6] mb-2 text-left">
+        <div className="flex-1 flex flex-col justify-center items-center px-8 max-w-md w-full">
+          <div className="w-full flex flex-col items-center sm:items-start">
+            <h1 className="text-5xl font-extrabold tracking-wider text-[hsl(var(--mc-background))] mb-2 text-center sm:text-left">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-lg text-[#fff3e6] mb-8 text-left">
+              <p className="text-lg text-[hsl(var(--mc-background))] mb-8 text-center sm:text-left">
                 {subtitle}
               </p>
             )}
-            <div className="w-full">{children}</div>
+            <div className="w-full flex flex-col items-center sm:items-start">
+              {children}
+            </div>
           </div>
         </div>
-        {/* Right: Image */}
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="rounded-3xl overflow-hidden shadow-2xl w-full max-w-xl aspect-video bg-[#fff3e6]/30 flex items-center justify-center">
+        <div className="hidden sm:flex flex-1 items-center justify-center p-8">
+          <div className="rounded-3xl overflow-hidden shadow-2xl w-full max-w-xl aspect-video bg-[hsl(var(--mc-warm))] flex items-center justify-center">
             <Image
               src={imageSrc}
               alt="CV Preview"
@@ -49,7 +49,6 @@ export default function AuthLayout({
           </div>
         </div>
       </div>
-      {/* Top left copyright & top right credit */}
     </div>
   );
 }

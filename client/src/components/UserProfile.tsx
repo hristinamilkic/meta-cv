@@ -48,12 +48,12 @@ export default function UserProfile() {
       <div className="flex gap-2 sm:gap-4">
         <Link href="/login">
           <Button className="uppercase border border-white rounded-xl px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
-            login
+            Login
           </Button>
         </Link>
         <Link href="/register">
           <Button className="uppercase border border-white rounded-xl px-4 sm:px-6 py-2 text-white text-base sm:text-lg font-medium hover:bg-white/10 bg-transparent transition">
-            register
+            Register
           </Button>
         </Link>
       </div>
@@ -74,10 +74,10 @@ export default function UserProfile() {
             </span>
           </div>
           <div className="flex flex-col items-start">
-            <span className="hidden sm:block">
+            <span className="sm:block">
               {user.firstName + " " + user.lastName || "User"}
             </span>
-            <span className="hidden sm:block">{user.email || "User"}</span>
+            <span className="sm:block">{user.email || "User"}</span>
           </div>
           <Icon
             name="cheveron"
@@ -232,7 +232,7 @@ export default function UserProfile() {
             <div className="border-t border-gray-100 pt-1">
               <button
                 onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
               >
                 <div className="flex items-center space-x-2">
                   <svg

@@ -29,7 +29,7 @@ export default function LoginPage() {
       <form className="space-y-6 w-full" onSubmit={handleSubmit}>
         {error && (
           <div className="rounded-md bg-red-50 p-4">
-            <div className="text-sm text-red-700">{error}</div>
+            <div className="text-sm text-red-500">{error}</div>
           </div>
         )}
         <div className="space-y-4">
@@ -56,21 +56,26 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full text-lg font-semibold bg-[#f7a18e] hover:bg-[#e78a7a] text-white py-3 rounded-xl shadow-md transition"
-        >
+        <Button type="submit" disabled={loading}>
           {loading ? <span>Signing in...</span> : "LOGIN"}
         </Button>
-        <div className="flex flex-col items-center gap-2 mt-2">
-          <div className="text-sm text-[#fff3e6]">
+        <div className="text-sm flex flex-col items-center gap-1 mt-2">
+          <div className="text-[hsl(var(--mc-background))] tracking-wide font-light">
             Forgotten password?{" "}
             <Link
               href="/forgot-password"
-              className="underline hover:text-[#f7a18e]"
+              className="underline hover:text-[hsl(var(--mc-accent))] transition-all duration-300"
             >
-              Sign up
+              Reset password
+            </Link>
+          </div>
+          <div className="text-[hsl(var(--mc-background))] tracking-wide font-light">
+            Don't have an account?{" "}
+            <Link
+              href="/register"
+              className="underline hover:text-[hsl(var(--mc-accent))] transition-all duration-300"
+            >
+              Register now!
             </Link>
           </div>
         </div>

@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 interface CV {
   _id: string;
   user: string;
-  template: string; 
+  template: string;
   cvData: any;
   createdAt: string;
   updatedAt: string;

@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useMemo, FC, useCallback } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +14,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import api from "@/services/api";
+import { Separator } from "@/components/ui/separator";
 
 interface User {
   _id: string;
@@ -88,34 +88,31 @@ const DataTable = <T extends { _id: string }>({
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 w-full text-white border border-white/40">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 w-full text-white border border-white/40 overflow-x-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold">{title}</h2>
-        <div className="flex items-center gap-4">
-          <div className="relative">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <input
               type="text"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white/10 rounded-full py-2 px-4 pl-10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="bg-white/10 w-full sm:w-auto rounded-full py-2 px-4 pl-10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
             />
             <Icon
               name="search"
               className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
             />
           </div>
-          <Button
-            onClick={onAdd}
-            className="bg-rose-500 hover:bg-rose-600 rounded-full px-6 py-2"
-          >
+          <Button onClick={onAdd} variant="destructive">
             Add
           </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left min-w-[600px]">
           <thead>
             <tr className="bg-black/20">
               {columns.map((col) => (
@@ -138,11 +135,7 @@ const DataTable = <T extends { _id: string }>({
                   </td>
                 ))}
                 <td className="p-3 flex gap-2">
-                  <Button
-                    onClick={() => onUpdate(item)}
-                    size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
+                  <Button onClick={() => onUpdate(item)} size="sm">
                     Update
                   </Button>
                   <Button
@@ -159,14 +152,11 @@ const DataTable = <T extends { _id: string }>({
         </table>
       </div>
 
-      <div className="flex justify-between items-center mt-6">
-        <Button
-          variant="outline"
-          className="text-white border-white/20 hover:bg-white/10"
-        >
-          Export Data
-        </Button>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+        <div className="self-start sm:self-auto sm:w-auto w-full">
+          <Button>Export Data</Button>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
           <span>Items per page:</span>
           <select
             value={itemsPerPage}
@@ -240,12 +230,7 @@ export default function AdminPage() {
   };
 
   const handleDelete = async (item: Entity) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete this ${activeView.slice(0, -1)}?`
-      )
-    )
-      return;
+    if (!window.confirm(`Delete this ${activeView.slice(0, -1)}?`)) return;
 
     const endpointMap = {
       ADMINS: "users",
@@ -261,7 +246,6 @@ export default function AdminPage() {
       fetchData();
     } catch (error) {
       console.error("Failed to delete entity:", error);
-      alert("Deletion failed. See console for details.");
     }
   };
 
@@ -290,18 +274,18 @@ export default function AdminPage() {
     }
   }, [activeView, users, templates, cvs]);
 
-  const userColumns: { Header: string; accessor: keyof User }[] = [
+  const userColumns = [
     { Header: "First Name", accessor: "firstName" },
     { Header: "Email", accessor: "email" },
     { Header: "Premium", accessor: "isPremium" },
   ];
 
-  const templateColumns: { Header: string; accessor: keyof Template }[] = [
+  const templateColumns = [
     { Header: "Name", accessor: "name" },
     { Header: "Premium", accessor: "isPremium" },
   ];
 
-  const cvColumns: { Header: string; accessor: keyof CV }[] = [
+  const cvColumns = [
     { Header: "Title", accessor: "title" },
     { Header: "User ID", accessor: "user" },
   ];
@@ -319,7 +303,7 @@ export default function AdminPage() {
       default:
         return [];
     }
-  }, [activeView, userColumns, templateColumns, cvColumns]);
+  }, [activeView]);
 
   if (loading) {
     return (
@@ -333,24 +317,33 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-[85vh] flex items-center justify-center p-4">
-        <div className="w-full max-w-7xl mx-auto flex gap-8">
-          <aside className="w-1/4">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex flex-col gap-2 border border-white/40">
-              {sidebarItems.map((item) => (
-                <Button
-                  key={item}
-                  variant={activeView === item ? "secondary" : "ghost"}
-                  onClick={() => setActiveView(item)}
-                  className={`w-full justify-start p-6 text-lg rounded-xl ${activeView === item ? "text-purple-800" : "text-white"}`}
-                >
-                  {item.replace("_", " ")}
-                </Button>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl flex flex-col items-center justify-center gap-8">
+          <div className="w-full flex justify-center overflow-x-auto mb-4 py-4">
+            <div className="flex gap-2 items-center justify-center w-full sm:w-fit sm:border border-white/20 rounded-xl p-2">
+              {sidebarItems.map((item, index) => (
+                <div key={item} className="flex items-center gap-2">
+                  <Button
+                    variant={activeView === item ? "secondary" : "ghost"}
+                    onClick={() => setActiveView(item)}
+                    className={`whitespace-nowrap px-6 py-3 text-sm md:text-base rounded-xl transition-colors duration-150 ${
+                      activeView === item ? "text-purple-800" : "text-white"
+                    }`}
+                  >
+                    {item.replace("_", "  ")}
+                  </Button>
+                  {index < sidebarItems.length - 1 && (
+                    <Separator
+                      orientation="vertical"
+                      className="h-6 bg-white/30"
+                    />
+                  )}
+                </div>
               ))}
             </div>
-          </aside>
+          </div>
 
-          <main className="w-3/4">
+          <main className="w-full flex justify-center">
             <DataTable
               data={activeData}
               columns={activeColumns as any}
@@ -362,23 +355,6 @@ export default function AdminPage() {
           </main>
         </div>
       </div>
-
-      <Dialog open={isModalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="bg-gray-800 text-white border-purple-500">
-          <DialogHeader>
-            <DialogTitle>
-              {editingEntity ? "Update" : "Add"} {activeView.slice(0, -1)}
-            </DialogTitle>
-          </DialogHeader>
-          <p>Form placeholder for {activeView}</p>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </ProtectedRoute>
   );
 }

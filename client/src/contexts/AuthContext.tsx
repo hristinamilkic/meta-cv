@@ -89,9 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       authService.setToken(response.token);
       setUser(response.user);
 
-      // Redirect to original destination or dashboard
-      const from = searchParams.get("from") || "/dashboard";
-      router.push(from);
+      // Redirect logic: if admin, go to /admin, else use from/dashboard
+      if (response.user.isAdmin) {
+        router.push("/admin"); // or "/" if you prefer
+      } else {
+        const from = searchParams.get("from") || "/dashboard";
+        router.push(from);
+      }
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to login";
       setError(errorMessage);
