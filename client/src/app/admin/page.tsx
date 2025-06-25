@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/Icon";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -27,8 +26,13 @@ import {
 } from "@/components/ui/pagination";
 import { toCSV, downloadCSV } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AddUserForm,
+  UpdateUserForm,
+  AddTemplateForm,
+  UpdateTemplateForm,
+  PasswordUpdateForm,
+} from "@/components/admin/AdminForms";
 
 interface AdminUser {
   _id: string;
@@ -75,6 +79,7 @@ interface DataTableProps<T extends { _id: string }> {
   currentUserId?: string;
   entityType: "user" | "template" | "cv";
   user?: AdminUser;
+  fetchData?: () => void;
 }
 
 const DataTable = <T extends { _id: string }>({
@@ -88,10 +93,12 @@ const DataTable = <T extends { _id: string }>({
   entityType,
   loading = false,
   user,
+  fetchData,
 }: DataTableProps<T> & {
   entityType: "user" | "template" | "cv";
   loading?: boolean;
   user?: AdminUser;
+  fetchData?: () => void;
 }): JSX.Element => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -170,25 +177,32 @@ const DataTable = <T extends { _id: string }>({
   };
 
   const handleUpdate = async () => {
-    if (
-      title === "ADMINS" &&
-      user &&
-      user.isRoot &&
-      dialogType === "update" &&
-      selectedEntity
-    ) {
-      await api.put(`/api/users/${selectedEntity._id}/password`, {
-        newPassword: formState.newPassword,
-      });
-    } else if (dialogType === "update" && selectedEntity) {
-      await onUpdate(formState);
+    if (dialogType === "update" && selectedEntity) {
+      if (entityType === "template") {
+        await onUpdate(formState);
+      } else {
+        if (user?.isRoot) {
+          if (formState.newPassword) {
+            await api.put(`/api/users/${selectedEntity._id}/password`, {
+              newPassword: formState.newPassword,
+            });
+          }
+          const { newPassword, ...updateData } = formState;
+          await onUpdate(updateData);
+        } else {
+          const { newPassword, ...updateData } = formState;
+          await onUpdate(updateData);
+        }
+      }
     }
     handleDialogClose();
+    if (fetchData) fetchData();
   };
 
   const handleDelete = async () => {
     if (selectedEntity) await onDelete(selectedEntity);
     handleDialogClose();
+    if (fetchData) fetchData();
   };
 
   const handleAdd = async () => {
@@ -215,6 +229,7 @@ const DataTable = <T extends { _id: string }>({
         await api.post("/api/users/create", submitData);
         handleDialogClose();
       }
+      if (fetchData) fetchData();
     } catch (err: any) {
       setAddError(err.response?.data?.message || "Failed to add user");
     }
@@ -283,10 +298,10 @@ const DataTable = <T extends { _id: string }>({
           <DialogHeader>
             <DialogTitle>
               {dialogType === "update"
-                ? `Update ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`
+                ? `UPDATE ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`
                 : dialogType === "delete"
-                  ? `Delete ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`
-                  : "Add User"}
+                  ? `DELETE ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`
+                  : `ADD ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`}
             </DialogTitle>
           </DialogHeader>
           {dialogType === "update" &&
@@ -294,131 +309,64 @@ const DataTable = <T extends { _id: string }>({
           title === "ADMINS" &&
           user &&
           user.isRoot ? (
-            <form className="flex flex-col gap-4">
-              <div>
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  name="newPassword"
-                  value={formState.newPassword || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter new password"
-                  type="password"
-                  variant="light"
-                />
-              </div>
-            </form>
+            <UpdateUserForm
+              formState={formState}
+              setFormState={setFormState}
+              handleFormChange={handleFormChange}
+              user={user}
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdate();
+              }}
+            />
           ) : dialogType === "update" && selectedEntity ? (
-            <form className="flex flex-col gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  value={formState.firstName || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter first name"
-                  variant="light"
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  value={formState.lastName || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter last name"
-                  variant="light"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  value={formState.email || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter email address"
-                  type="email"
-                  variant="light"
-                />
-              </div>
-            </form>
+            entityType === "template" ? (
+              <UpdateTemplateForm
+                formState={formState}
+                setFormState={setFormState}
+                handleFormChange={handleFormChange}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleUpdate();
+                }}
+              />
+            ) : (
+              <UpdateUserForm
+                formState={formState}
+                setFormState={setFormState}
+                handleFormChange={handleFormChange}
+                user={user}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleUpdate();
+                }}
+              />
+            )
           ) : dialogType === "add" ? (
-            <form className="flex flex-col gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  value={formState.firstName || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter first name"
-                  variant="light"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  value={formState.lastName || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter last name"
-                  variant="light"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  value={formState.email || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter email address"
-                  type="email"
-                  variant="light"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  value={formState.password || ""}
-                  onChange={handleFormChange}
-                  placeholder="Enter password"
-                  type="password"
-                  variant="light"
-                  required
-                />
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="isAdmin"
-                    checked={title === "ADMINS"}
-                    disabled
-                  />
-                  <Label htmlFor="isAdmin">Admin</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="isPremium"
-                    checked={title === "ADMINS" || title === "PREMIUM USERS"}
-                    disabled
-                  />
-                  <Label htmlFor="isPremium">Premium</Label>
-                </div>
-              </div>
-              {addError && (
-                <div className="text-red-500 text-sm">{addError}</div>
-              )}
-            </form>
+            entityType === "template" ? (
+              <AddTemplateForm
+                formState={formState}
+                setFormState={setFormState}
+                handleFormChange={handleFormChange}
+                addError={addError}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAdd();
+                }}
+              />
+            ) : (
+              <AddUserForm
+                formState={formState}
+                setFormState={setFormState}
+                handleFormChange={handleFormChange}
+                title={title}
+                addError={addError}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAdd();
+                }}
+              />
+            )
           ) : null}
           {dialogType === "delete" && (
             <div className="text-center py-4">
@@ -518,27 +466,61 @@ const DataTable = <T extends { _id: string }>({
                       </td>
                     ))}
                     <td className="p-3 flex gap-2">
-                      {entityType !== "cv" && (
+                      {entityType !== "cv" &&
+                        (title === "ADMINS" ? (
+                          user?.isRoot ? (
+                            <Button
+                              onClick={() => handleDialogOpen("update", item)}
+                              size="sm"
+                            >
+                              Update
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleDialogOpen("update", item)}
+                              size="sm"
+                              disabled={(item as any)._id !== currentUserId}
+                            >
+                              Update
+                            </Button>
+                          )
+                        ) : (
+                          <Button
+                            onClick={() => handleDialogOpen("update", item)}
+                            size="sm"
+                          >
+                            Update
+                          </Button>
+                        ))}
+                      {title === "ADMINS" ? (
                         <Button
-                          onClick={() => handleDialogOpen("update", item)}
+                          onClick={() => handleDialogOpen("delete", item)}
                           size="sm"
+                          variant="destructive"
+                          disabled={
+                            user?.isRoot
+                              ? (item as any).isRoot ||
+                                (item as any)._id === currentUserId
+                              : true
+                          }
                         >
-                          Update
+                          Delete
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleDialogOpen("delete", item)}
+                          size="sm"
+                          variant="destructive"
+                          disabled={
+                            typeof (item as any).isRoot !== "undefined" &&
+                            ((item as any).isRoot ||
+                              (currentUserId &&
+                                (item as any)._id === currentUserId))
+                          }
+                        >
+                          Delete
                         </Button>
                       )}
-                      <Button
-                        onClick={() => handleDialogOpen("delete", item)}
-                        size="sm"
-                        variant="destructive"
-                        disabled={
-                          typeof (item as any).isRoot !== "undefined" &&
-                          ((item as any).isRoot ||
-                            (currentUserId &&
-                              (item as any)._id === currentUserId))
-                        }
-                      >
-                        Delete
-                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -618,7 +600,7 @@ const DataTable = <T extends { _id: string }>({
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [activeView, setActiveView] = useState<ViewType>("BASIC_USERS");
+  const [activeView, setActiveView] = useState<ViewType>("ADMINS");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [cvs, setCvs] = useState<CV[]>([]);
@@ -657,7 +639,7 @@ export default function AdminPage() {
       case "BASIC_USERS":
         return users.filter((u) => !u.isAdmin && !u.isPremium);
       case "PREMIUM_USERS":
-        return users.filter((u) => u.isPremium);
+        return users.filter((u) => u.isPremium && !u.isAdmin);
       case "TEMPLATES":
         return templates;
       case "CVS":
@@ -678,9 +660,22 @@ export default function AdminPage() {
     setModalOpen(true);
   };
 
-  const handleUpdate = (item: Entity) => {
-    setEditingEntity(item);
-    setModalOpen(true);
+  const handleUpdate = async (item: Entity) => {
+    const endpointMap = {
+      ADMINS: "users",
+      BASIC_USERS: "users",
+      PREMIUM_USERS: "users",
+      TEMPLATES: "templates",
+      CVS: "cv",
+    };
+    const endpoint = `/api/${endpointMap[activeView]}/${item._id}`;
+
+    try {
+      await api.put(endpoint, item);
+      fetchData();
+    } catch (error) {
+      console.error("Failed to update entity:", error);
+    }
   };
 
   const handleDelete = async (item: Entity) => {
@@ -762,15 +757,16 @@ export default function AdminPage() {
     <ProtectedRoute requireAdmin>
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-4xl flex flex-col items-center justify-center gap-8">
-          <div className="w-full flex justify-center overflow-x-auto mb-4 py-4 whitespace-nowrap">
-            <div className="flex gap-2 items-center justify-center w-full sm:w-fit sm:border border-white/20 rounded-xl p-2 min-w-max">
+          <div className="block sm:flex sm:justify-center overflow-x-auto w-full py-4 whitespace-nowrap">
+            <div className="inline-flex min-w-max gap-2 items-center border border-white/20 rounded-xl p-2 mx-auto">
               {sidebarItems.map((item, index) => (
                 <div key={item} className="flex items-center gap-2">
                   <Button
-                    variant={activeView === item ? "secondary" : "ghost"}
                     onClick={() => setActiveView(item)}
-                    className={`whitespace-nowrap min-w-max px-6 py-3 text-sm md:text-base rounded-xl transition-colors duration-150 ${
-                      activeView === item ? "text-purple-800" : "text-white"
+                    className={`whitespace-nowrap min-w-max px-6 py-3 text-sm md:text-base rounded-lg transition-colors duration-150 ${
+                      activeView === item
+                        ? "text-[hsl(var(--mc-secondary))] bg-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-background))] transition-all duration-300 shadow-lg"
+                        : "text-white bg-transparent shadow-none"
                     }`}
                   >
                     {item.replace("_", "  ")}
@@ -804,6 +800,7 @@ export default function AdminPage() {
               }
               loading={dataLoading}
               user={normalizedUser}
+              fetchData={fetchData}
             />
           </main>
         </div>

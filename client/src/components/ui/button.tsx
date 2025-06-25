@@ -12,9 +12,9 @@ const buttonVariants = cva(
         default:
           "bg-[hsl(var(--mc-warm))] text-[hsl(var(--mc-background))] shadow-lg hover:bg-[hsl(var(--mc-secondary))] transition-all duration-300",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-[hsl(var(--mc-primary))] transition-all duration-300",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background shadow-lg hover:bg-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-secondary))] transition-all duration-300",
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",

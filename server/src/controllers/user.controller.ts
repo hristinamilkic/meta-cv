@@ -883,7 +883,7 @@ export const userController = {
         email,
         password,
         isAdmin: true,
-        isPremium: false,
+        isPremium: true,
       });
       await user.save();
       return res.status(201).json({
