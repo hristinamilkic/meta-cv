@@ -18,3 +18,18 @@ export const requireAdmin = (
   next();
   return;
 };
+
+export const requireRoot = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user?.isRoot) {
+    return res.status(403).json({
+      success: false,
+      message: "Root admin access required",
+    });
+  }
+  next();
+  return;
+};

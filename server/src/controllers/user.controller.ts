@@ -806,4 +806,87 @@ export const userController = {
         .json({ valid: false, message: "Error verifying reset code" });
     }
   },
+
+  async updateUserPasswordByRoot(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user?.isRoot) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Root admin access required" });
+      }
+      const { userId } = req.params;
+      const { newPassword } = req.body;
+      if (!newPassword) {
+        return res
+          .status(400)
+          .json({ success: false, message: "New password is required" });
+      }
+      const user = await User.findById(userId);
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+      user.password = newPassword;
+      await user.save();
+      return res.status(200).json({
+        success: true,
+        message: "Password updated successfully by root admin",
+      });
+    } catch (error) {
+      console.error("Error updating user password by root:", error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error updating user password" });
+    }
+  },
+
+  async createAdminByRoot(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user?.isRoot) {
+        return res
+          .status(403)
+          .json({ success: false, message: "Root admin access required" });
+      }
+      const { firstName, lastName, email, password } = req.body;
+      if (!firstName || !lastName || !email || !password) {
+        return res
+          .status(400)
+          .json({ success: false, message: "All fields are required" });
+      }
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Email already registered" });
+      }
+      const user = new User({
+        firstName,
+        lastName,
+        email,
+        password,
+        isAdmin: true,
+        isPremium: false,
+      });
+      await user.save();
+      return res.status(201).json({
+        success: true,
+        message: "Admin created successfully",
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isAdmin: user.isAdmin,
+          isPremium: user.isPremium,
+          isRoot: user.isRoot,
+        },
+      });
+    } catch (error) {
+      console.error("Error creating admin by root:", error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Error creating admin" });
+    }
+  },
 };

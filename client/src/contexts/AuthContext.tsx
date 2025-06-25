@@ -22,7 +22,9 @@ export interface AuthContextType {
   changePassword: (data: ChangePasswordData) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   clearError: () => void;
-  verifyResetCode: (code: string) => Promise<boolean>;
+  verifyResetCode: (
+    code: string
+  ) => Promise<{ valid: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -89,9 +91,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       authService.setToken(response.token);
       setUser(response.user);
 
-      // Redirect logic: if admin, go to /admin, else use from/dashboard
       if (response.user.isAdmin) {
-        router.push("/admin"); // or "/" if you prefer
+        router.push("/admin");
       } else {
         const from = searchParams.get("from") || "/dashboard";
         router.push(from);

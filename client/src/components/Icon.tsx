@@ -12,7 +12,10 @@ export type ValidIconName =
   | "success"
   | "eye"
   | "eyeOff"
-  | "x";
+  | "x"
+  | "edit-profile"
+  | "dashboard"
+  | "logout";
 
 export function Icon(props: { name: ValidIconName; className: string }) {
   switch (props.name) {
@@ -49,7 +52,7 @@ export function Icon(props: { name: ValidIconName; className: string }) {
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#000000"
+          stroke="currentColor"
           strokeWidth="1"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -65,7 +68,7 @@ export function Icon(props: { name: ValidIconName; className: string }) {
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#000000"
+          stroke="currentColor"
           strokeWidth="1"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -81,7 +84,7 @@ export function Icon(props: { name: ValidIconName; className: string }) {
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#000000"
+          stroke="currentColor"
           strokeWidth="1"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -214,6 +217,54 @@ export function Icon(props: { name: ValidIconName; className: string }) {
             strokeLinejoin="round"
             strokeWidth={2}
             d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      );
+    case "edit-profile":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          className={props.className}
+        >
+          <g
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          >
+            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10s10-4.477 10-10S17.523 2 12 2" />
+            <path d="M4.271 18.346S6.5 15.5 12 15.5s7.73 2.846 7.73 2.846M12 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6" />
+          </g>
+        </svg>
+      );
+    case "dashboard":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          className={props.className}
+        >
+          <path
+            fill="currentColor"
+            d="M12 4h8v6h-8zm0 17V11h8v10zm-9 0v-6h8v6zm0-7V4h8v10zm1-9v8h6V5zm9 0v4h6V5zm0 7v8h6v-8zm-9 4v4h6v-4z"
+          />
+        </svg>
+      );
+    case "logout":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          className={props.className}
+        >
+          <path
+            fill="currentColor"
+            d="M5.616 20q-.691 0-1.153-.462T4 18.384V5.616q0-.691.463-1.153T5.616 4h6.403v1H5.616q-.231 0-.424.192T5 5.616v12.769q0 .23.192.423t.423.192h6.404v1zm10.846-4.461l-.702-.72l2.319-2.319H9.192v-1h8.887l-2.32-2.32l.702-.718L20 12z"
           />
         </svg>
       );

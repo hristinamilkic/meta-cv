@@ -135,6 +135,7 @@ export default function ProfileEditDialog({
               <div className="mb-3">
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
+                  variant="light"
                   id="firstName"
                   name="firstName"
                   value={formData.firstName}
@@ -145,6 +146,7 @@ export default function ProfileEditDialog({
               <div className="mb-3">
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input
+                  variant="light"
                   id="lastName"
                   name="lastName"
                   value={formData.lastName}
@@ -157,6 +159,7 @@ export default function ProfileEditDialog({
               <div className="mb-3">
                 <Label htmlFor="email">Email</Label>
                 <Input
+                  variant="light"
                   id="email"
                   name="email"
                   value={formData.email}
@@ -170,6 +173,7 @@ export default function ProfileEditDialog({
               <div className="mb-3">
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input
+                  variant="light"
                   id="phone"
                   name="phone"
                   value={formData.phone}
@@ -184,6 +188,7 @@ export default function ProfileEditDialog({
               <div className="mb-3">
                 <Label htmlFor="currentPassword">Current Password</Label>
                 <Input
+                  variant="light"
                   id="currentPassword"
                   name="currentPassword"
                   type="password"
@@ -194,6 +199,7 @@ export default function ProfileEditDialog({
               <div className="mb-3">
                 <Label htmlFor="newPassword">New Password</Label>
                 <Input
+                  variant="light"
                   id="newPassword"
                   name="newPassword"
                   type="password"
@@ -204,6 +210,7 @@ export default function ProfileEditDialog({
               <div className="mb-3">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <Input
+                  variant="light"
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"

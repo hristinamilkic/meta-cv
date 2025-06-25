@@ -1,7 +1,7 @@
 import express from "express";
 import { userController, register } from "../controllers/user.controller";
 import { requireAuth } from "../middleware/auth.middleware";
-import { requireAdmin } from "../middleware/admin.middleware";
+import { requireAdmin, requireRoot } from "../middleware/admin.middleware";
 
 const router = express.Router();
 
@@ -22,5 +22,17 @@ router.put("/password", requireAuth, userController.changePassword);
 router.post("/create", requireAuth, requireAdmin, userController.createUser);
 router.get("/all", requireAuth, requireAdmin, userController.getAllUsers);
 router.put("/:userId", requireAuth, requireAdmin, userController.updateUser);
+router.put(
+  "/:userId/password",
+  requireAuth,
+  requireRoot,
+  userController.updateUserPasswordByRoot
+);
+router.post(
+  "/create-admin",
+  requireAuth,
+  requireRoot,
+  userController.createAdminByRoot
+);
 
 export default router;

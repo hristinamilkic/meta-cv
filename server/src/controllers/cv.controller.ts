@@ -40,7 +40,6 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Map client data structure to server structure
     const personalDetails = data.personalDetails || data.personalInfo || {};
     const title =
       data.title ||
@@ -149,16 +148,13 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
 
     const { data, title } = req.body;
 
-    // Map client data structure to server structure
     const updateData: any = {};
 
     if (data) {
-      // Handle personal details mapping
       if (data.personalDetails || data.personalInfo) {
         updateData.personalDetails = data.personalDetails || data.personalInfo;
       }
 
-      // Handle other fields
       if (data.education) updateData.education = data.education;
       if (data.experience) updateData.experience = data.experience;
       if (data.skills) updateData.skills = data.skills;
@@ -262,11 +258,9 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Convert to plain object and ensure proper structure
     const cvData = cv.toObject();
     const templateData = cv.template.toObject();
 
-    // Ensure all required fields exist
     const structuredCVData = {
       personalDetails: cvData.personalDetails || {},
       education: cvData.education || [],
@@ -286,7 +280,6 @@ export const downloadCV = async (req: AuthRequest, res: Response) => {
       templateData
     );
 
-    // Sanitize filename for Content-Disposition header
     let safeTitle = (cv.title || "CV").replace(/[^a-zA-Z0-9-_\. ]/g, "_");
     if (!safeTitle.trim()) safeTitle = "CV";
 

@@ -26,9 +26,13 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { toCSV, downloadCSV } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
-interface User {
+interface AdminUser {
   _id: string;
+  id?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -59,7 +63,7 @@ type ViewType =
   | "TEMPLATES"
   | "CVS";
 
-type Entity = User | Template | CV;
+type Entity = AdminUser | Template | CV;
 
 interface DataTableProps<T extends { _id: string }> {
   data: T[];
@@ -70,6 +74,7 @@ interface DataTableProps<T extends { _id: string }> {
   onDelete: (item: T) => void;
   currentUserId?: string;
   entityType: "user" | "template" | "cv";
+  user?: AdminUser;
 }
 
 const DataTable = <T extends { _id: string }>({
@@ -81,8 +86,12 @@ const DataTable = <T extends { _id: string }>({
   onDelete,
   currentUserId,
   entityType,
+  loading = false,
+  user,
 }: DataTableProps<T> & {
   entityType: "user" | "template" | "cv";
+  loading?: boolean;
+  user?: AdminUser;
 }): JSX.Element => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,12 +100,12 @@ const DataTable = <T extends { _id: string }>({
   const itemsPerPageDesktop = 4;
   const itemsPerPageMobile = 2;
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"update" | "delete" | null>(
-    null
-  );
+  const [dialogType, setDialogType] = useState<
+    "update" | "delete" | "add" | null
+  >(null);
   const [selectedEntity, setSelectedEntity] = useState<T | null>(null);
   const [formState, setFormState] = useState<any>({});
-  const [loading, setLoading] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const getItemsPerPage = () => {
     return isMobile ? itemsPerPageMobile : itemsPerPageDesktop;
@@ -134,7 +143,6 @@ const DataTable = <T extends { _id: string }>({
   const handleSearchIconClick = () => {
     setIsSearchExpanded(!isSearchExpanded);
     if (!isSearchExpanded) {
-      // Focus the input when expanding
       setTimeout(() => {
         const searchInput = document.getElementById("search-input");
         if (searchInput) {
@@ -144,7 +152,7 @@ const DataTable = <T extends { _id: string }>({
     }
   };
 
-  const handleDialogOpen = (type: "update" | "delete", entity: T) => {
+  const handleDialogOpen = (type: "update" | "delete" | "add", entity: T) => {
     setDialogType(type);
     setSelectedEntity(entity);
     setFormState(entity);
@@ -162,32 +170,69 @@ const DataTable = <T extends { _id: string }>({
   };
 
   const handleUpdate = async () => {
-    setLoading(true);
-    await onUpdate(formState);
-    setLoading(false);
+    if (
+      title === "ADMINS" &&
+      user &&
+      user.isRoot &&
+      dialogType === "update" &&
+      selectedEntity
+    ) {
+      await api.put(`/api/users/${selectedEntity._id}/password`, {
+        newPassword: formState.newPassword,
+      });
+    } else if (dialogType === "update" && selectedEntity) {
+      await onUpdate(formState);
+    }
     handleDialogClose();
   };
 
   const handleDelete = async () => {
-    setLoading(true);
     if (selectedEntity) await onDelete(selectedEntity);
-    setLoading(false);
     handleDialogClose();
   };
 
+  const handleAdd = async () => {
+    setAddError(null);
+    try {
+      let submitData = { ...formState };
+      if (title === "ADMINS") {
+        submitData.isAdmin = true;
+        submitData.isPremium = true;
+      } else if (title === "PREMIUM USERS") {
+        submitData.isAdmin = false;
+        submitData.isPremium = true;
+      } else if (title === "BASIC USERS") {
+        submitData.isAdmin = false;
+        submitData.isPremium = false;
+      }
+      if (title === "ADMINS" && user && user.isRoot) {
+        await api.post("/api/users/create-admin", submitData);
+        handleDialogClose();
+      } else if (
+        (title === "BASIC USERS" || title === "PREMIUM USERS") &&
+        submitData
+      ) {
+        await api.post("/api/users/create", submitData);
+        handleDialogClose();
+      }
+    } catch (err: any) {
+      setAddError(err.response?.data?.message || "Failed to add user");
+    }
+  };
+
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 w-full text-white border border-white/40 overflow-x-auto">
+    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 w-full text-white border border-white/10 overflow-x-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold">{title}</h2>
         <div className="flex items-center gap-4 w-full sm:w-auto">
           <div className="relative w-full sm:w-auto">
-            <input
+            <Input
               id="search-input"
               type="text"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`bg-white/10 rounded-full py-2 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-300 ${
+              className={`bg-transparent rounded-full py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--mc-background))] transition-all duration-300 ${
                 isSearchExpanded
                   ? "w-full sm:w-64 pl-4"
                   : "w-0 sm:w-0 pl-0 pr-0 opacity-0 sm:opacity-100 sm:pl-10"
@@ -196,10 +241,10 @@ const DataTable = <T extends { _id: string }>({
             <button
               type="button"
               onClick={handleSearchIconClick}
-              className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-white transition-all duration-300 ${
+              className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] transition-all duration-300 ${
                 isSearchExpanded
-                  ? "left-3 opacity-0 pointer-events-none"
-                  : "left-3 sm:left-3"
+                  ? "left-2.5 opacity-0 pointer-events-none"
+                  : "left-2.5"
               }`}
             >
               <Icon name="search" className="w-5 h-5" />
@@ -211,28 +256,25 @@ const DataTable = <T extends { _id: string }>({
                   setIsSearchExpanded(false);
                   setSearchTerm("");
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-white transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] transition-colors"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <Icon name="x" className="w-5 h-5" />
               </button>
             )}
           </div>
-          <Button onClick={onAdd} variant="destructive">
-            Add
-          </Button>
+          {entityType === "cv" ? null : (
+            <Button
+              onClick={() => {
+                setFormState({});
+                setDialogType("add");
+                setDialogOpen(true);
+              }}
+              variant="destructive"
+              disabled={title === "ADMINS" && user && !user.isRoot}
+            >
+              Add
+            </Button>
+          )}
         </div>
       </div>
 
@@ -242,27 +284,142 @@ const DataTable = <T extends { _id: string }>({
             <DialogTitle>
               {dialogType === "update"
                 ? `Update ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`
-                : `Delete ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`}
+                : dialogType === "delete"
+                  ? `Delete ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`
+                  : "Add User"}
             </DialogTitle>
           </DialogHeader>
-          {dialogType === "update" && selectedEntity && (
+          {dialogType === "update" &&
+          selectedEntity &&
+          title === "ADMINS" &&
+          user &&
+          user.isRoot ? (
             <form className="flex flex-col gap-4">
-              {Object.keys(formState).map((key) =>
-                key !== "_id" &&
-                key !== "isRoot" &&
-                key !== "createdAt" &&
-                key !== "isAdmin" ? (
-                  <Input
-                    key={key}
-                    name={key}
-                    value={formState[key] ?? ""}
-                    onChange={handleFormChange}
-                    placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+              <div>
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  name="newPassword"
+                  value={formState.newPassword || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter new password"
+                  type="password"
+                  variant="light"
+                />
+              </div>
+            </form>
+          ) : dialogType === "update" && selectedEntity ? (
+            <form className="flex flex-col gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  value={formState.firstName || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter first name"
+                  variant="light"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  value={formState.lastName || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter last name"
+                  variant="light"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  value={formState.email || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter email address"
+                  type="email"
+                  variant="light"
+                />
+              </div>
+            </form>
+          ) : dialogType === "add" ? (
+            <form className="flex flex-col gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  value={formState.firstName || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter first name"
+                  variant="light"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  value={formState.lastName || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter last name"
+                  variant="light"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  value={formState.email || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter email address"
+                  type="email"
+                  variant="light"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  value={formState.password || ""}
+                  onChange={handleFormChange}
+                  placeholder="Enter password"
+                  type="password"
+                  variant="light"
+                  required
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="isAdmin"
+                    checked={title === "ADMINS"}
+                    disabled
                   />
-                ) : null
+                  <Label htmlFor="isAdmin">Admin</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="isPremium"
+                    checked={title === "ADMINS" || title === "PREMIUM USERS"}
+                    disabled
+                  />
+                  <Label htmlFor="isPremium">Premium</Label>
+                </div>
+              </div>
+              {addError && (
+                <div className="text-red-500 text-sm">{addError}</div>
               )}
             </form>
-          )}
+          ) : null}
           {dialogType === "delete" && (
             <div className="text-center py-4">
               Are you sure you want to delete this {entityType}?
@@ -275,7 +432,7 @@ const DataTable = <T extends { _id: string }>({
               </Button>
             </DialogClose>
             {dialogType === "update" && (
-              <Button type="button" onClick={handleUpdate} disabled={loading}>
+              <Button type="button" onClick={handleUpdate}>
                 Save
               </Button>
             )}
@@ -284,9 +441,13 @@ const DataTable = <T extends { _id: string }>({
                 type="button"
                 onClick={handleDelete}
                 variant="destructive"
-                disabled={loading}
               >
                 Delete
+              </Button>
+            )}
+            {dialogType === "add" && (
+              <Button type="button" onClick={handleAdd}>
+                Save
               </Button>
             )}
           </DialogFooter>
@@ -308,61 +469,79 @@ const DataTable = <T extends { _id: string }>({
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((item: T) => (
-              <tr key={(item as any)._id} className="border-b border-white/10">
-                {columns.map((col) => (
-                  <td key={String(col.accessor)} className="p-3">
-                    {col.accessor === "isPremium" ? (
-                      <div className="flex items-center justify-center w-full h-full">
-                        {item[col.accessor] ? (
-                          <Icon
-                            name="success"
-                            className="w-5 h-5 text-green-400"
-                          />
-                        ) : (
-                          <Icon name="x" className="w-5 h-5 text-red-300" />
-                        )}
-                      </div>
-                    ) : col.accessor === "isRoot" ? (
-                      <div className="flex items-center justify-center w-full h-full">
-                        {item[col.accessor] ? (
-                          <Icon
-                            name="success"
-                            className="w-5 h-5 text-green-400"
-                          />
-                        ) : (
-                          <Icon name="x" className="w-5 h-5 text-red-300" />
-                        )}
-                      </div>
-                    ) : (
-                      <span>{String(item[col.accessor])}</span>
-                    )}
-                  </td>
-                ))}
-                <td className="p-3 flex gap-2">
-                  {entityType !== "cv" && (
-                    <Button
-                      onClick={() => handleDialogOpen("update", item)}
-                      size="sm"
-                    >
-                      Update
-                    </Button>
-                  )}
-                  <Button
-                    onClick={() => handleDialogOpen("delete", item)}
-                    size="sm"
-                    variant="destructive"
-                    disabled={
-                      typeof (item as any).isRoot !== "undefined" &&
-                      ((item as any).isRoot ||
-                        (currentUserId && (item as any)._id === currentUserId))
-                    }
+            {loading
+              ? Array.from({ length: 4 }).map((_, rowIdx) => (
+                  <tr key={rowIdx} className="border-b border-white/10">
+                    {columns.map((col, colIdx) => (
+                      <td key={colIdx} className="p-3">
+                        <Skeleton className="h-5 w-full" />
+                      </td>
+                    ))}
+                    <td className="p-3 flex gap-2">
+                      <Skeleton className="h-8 w-16 rounded" />
+                      <Skeleton className="h-8 w-16 rounded" />
+                    </td>
+                  </tr>
+                ))
+              : paginatedData.map((item: T) => (
+                  <tr
+                    key={(item as any)._id}
+                    className="border-b border-white/10"
                   >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
+                    {columns.map((col) => (
+                      <td key={String(col.accessor)} className="p-3">
+                        {col.accessor === "isPremium" ? (
+                          <div className="flex items-center justify-center w-full h-full">
+                            {item[col.accessor] ? (
+                              <Icon
+                                name="success"
+                                className="w-5 h-5 text-green-400"
+                              />
+                            ) : (
+                              <Icon name="x" className="w-5 h-5 text-red-300" />
+                            )}
+                          </div>
+                        ) : col.accessor === "isRoot" ? (
+                          <div className="flex items-center justify-center w-full h-full">
+                            {item[col.accessor] ? (
+                              <Icon
+                                name="success"
+                                className="w-5 h-5 text-green-400"
+                              />
+                            ) : (
+                              <Icon name="x" className="w-5 h-5 text-red-300" />
+                            )}
+                          </div>
+                        ) : (
+                          <span>{String(item[col.accessor])}</span>
+                        )}
+                      </td>
+                    ))}
+                    <td className="p-3 flex gap-2">
+                      {entityType !== "cv" && (
+                        <Button
+                          onClick={() => handleDialogOpen("update", item)}
+                          size="sm"
+                        >
+                          Update
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => handleDialogOpen("delete", item)}
+                        size="sm"
+                        variant="destructive"
+                        disabled={
+                          typeof (item as any).isRoot !== "undefined" &&
+                          ((item as any).isRoot ||
+                            (currentUserId &&
+                              (item as any)._id === currentUserId))
+                        }
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>
@@ -440,18 +619,22 @@ export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [activeView, setActiveView] = useState<ViewType>("BASIC_USERS");
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [cvs, setCvs] = useState<CV[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const fetchData = useCallback(() => {
-    api.get("/api/users/all").then((res) => {
-      setUsers(res.data || []);
-    });
-    api.get("/api/templates").then((res) => setTemplates(res.data.data || []));
-    api.get("/api/cv").then((res) => setCvs(res.data.data || []));
+    setDataLoading(true);
+    Promise.all([
+      api.get("/api/users/all").then((res) => setUsers(res.data || [])),
+      api
+        .get("/api/templates")
+        .then((res) => setTemplates(res.data.data || [])),
+      api.get("/api/cv").then((res) => setCvs(res.data.data || [])),
+    ]).finally(() => setDataLoading(false));
   }, []);
 
   useEffect(() => {
@@ -472,7 +655,7 @@ export default function AdminPage() {
       case "ADMINS":
         return users.filter((u) => u.isAdmin);
       case "BASIC_USERS":
-        return users.filter((u) => !u.isAdmin);
+        return users.filter((u) => !u.isAdmin && !u.isPremium);
       case "PREMIUM_USERS":
         return users.filter((u) => u.isPremium);
       case "TEMPLATES":
@@ -543,12 +726,27 @@ export default function AdminPage() {
       default:
         return [
           { Header: "First Name", accessor: "firstName" },
+          { Header: "Last Name", accessor: "lastName" },
           { Header: "Email", accessor: "email" },
           { Header: "Premium", accessor: "isPremium" },
         ];
     }
   };
   const activeColumns = getColumns();
+
+  const normalizedUser: AdminUser | undefined = user
+    ? {
+        _id: (user as any)._id || (user as any).id || "",
+        id: (user as any).id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isPremium: user.isPremium,
+        isAdmin: user.isAdmin,
+        isRoot: (user as any).isRoot,
+        createdAt: user.createdAt || "",
+      }
+    : undefined;
 
   if (loading) {
     return (
@@ -561,7 +759,7 @@ export default function AdminPage() {
   if (!user?.isAdmin) return null;
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireAdmin>
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-4xl flex flex-col items-center justify-center gap-8">
           <div className="w-full flex justify-center overflow-x-auto mb-4 py-4 whitespace-nowrap">
@@ -590,13 +788,13 @@ export default function AdminPage() {
 
           <main className="w-full sm:w-[86%] flex justify-center">
             <DataTable
-              data={activeData}
+              data={activeData as any}
               columns={activeColumns as any}
               title={activeView.replace("_", " ")}
               onAdd={handleAdd}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-              currentUserId={user?.id}
+              onUpdate={handleUpdate as any}
+              onDelete={handleDelete as any}
+              currentUserId={normalizedUser ? normalizedUser._id : ""}
               entityType={
                 activeView === "TEMPLATES"
                   ? "template"
@@ -604,6 +802,8 @@ export default function AdminPage() {
                     ? "cv"
                     : "user"
               }
+              loading={dataLoading}
+              user={normalizedUser}
             />
           </main>
         </div>
