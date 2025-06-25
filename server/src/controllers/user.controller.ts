@@ -23,12 +23,20 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, firstName, lastName, isAdmin, isPremium } =
+      req.body;
 
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields",
+      });
+    }
+
+    if (isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Only root admins can create admin users. Use /create-admin.",
       });
     }
 
@@ -45,8 +53,8 @@ export const createUser = async (req: Request, res: Response) => {
       password,
       firstName,
       lastName,
-      isAdmin: false,
-      isPremium: false,
+      isAdmin: false, // Always false here
+      isPremium: !!isPremium,
     });
 
     await user.save();
