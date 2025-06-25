@@ -59,6 +59,7 @@ export const createUser = async (req: Request, res: Response) => {
         lastName: user.lastName,
         isAdmin: user.isAdmin,
         isPremium: user.isPremium,
+        isRoot: user.isRoot,
       },
     });
   } catch (error) {
@@ -96,7 +97,24 @@ export const updateUser = async (req: Request, res: Response) => {
     const updatedUser = await User.findByIdAndUpdate(id, updates, {
       new: true,
     }).select("-password");
-    return res.status(200).json({ success: true, data: updatedUser });
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found after update",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: updatedUser._id,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        isAdmin: updatedUser.isAdmin,
+        isPremium: updatedUser.isPremium,
+        isRoot: updatedUser.isRoot,
+      },
+    });
   } catch (error) {
     console.error("Error updating user:", error);
     return res
@@ -105,7 +123,7 @@ export const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -122,6 +140,16 @@ export const deleteUser = async (req: Request, res: Response) => {
         success: false,
         message: "User not found",
       });
+    }
+    if (user.isRoot) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Cannot delete root admin." });
+    }
+    if (req.user?.id.toString() === user.id.toString()) {
+      return res
+        .status(403)
+        .json({ success: false, message: "You cannot delete yourself." });
     }
 
     await User.findByIdAndDelete(id);
@@ -183,6 +211,7 @@ export const register = async (req: Request, res: Response) => {
           lastName: user.lastName,
           isAdmin: user.isAdmin,
           isPremium: user.isPremium,
+          isRoot: user.isRoot,
         },
       },
     });
@@ -241,6 +270,7 @@ export const login = async (req: Request, res: Response) => {
           lastName: user.lastName,
           isAdmin: user.isAdmin,
           isPremium: user.isPremium,
+          isRoot: user.isRoot,
         },
       },
     });
@@ -431,6 +461,7 @@ export const userController = {
           email: user.email,
           isPremium: user.isPremium,
           isAdmin: user.isAdmin,
+          isRoot: user.isRoot,
         },
       });
     } catch (error) {
@@ -477,6 +508,7 @@ export const userController = {
           email: user.email,
           isPremium: user.isPremium,
           isAdmin: user.isAdmin,
+          isRoot: user.isRoot,
         },
       });
     } catch (error) {
@@ -504,6 +536,7 @@ export const userController = {
         email: user.email,
         isPremium: user.isPremium,
         isAdmin: user.isAdmin,
+        isRoot: user.isRoot,
       });
     } catch (error) {
       console.error("Error getting user:", error);
@@ -562,6 +595,7 @@ export const userController = {
           email: user.email,
           isPremium: user.isPremium,
           isAdmin: user.isAdmin,
+          isRoot: user.isRoot,
         },
       });
     } catch (error) {
@@ -610,6 +644,7 @@ export const userController = {
         isAdmin: user.isAdmin,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        isRoot: user.isRoot,
       };
 
       res.json({

@@ -11,6 +11,7 @@ export interface IUser extends Document {
   isPremium: boolean;
   isAdmin: boolean;
   isActive: boolean;
+  isRoot: boolean;
   lastLogin?: Date;
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
@@ -61,6 +62,7 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    isRoot: { type: Boolean, default: false },
     lastLogin: {
       type: Date,
     },
@@ -104,7 +106,7 @@ userSchema.methods.generatePasswordResetToken = function (): string {
     .update(resetToken)
     .digest("hex");
 
-  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); 
+  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000);
 
   return resetToken;
 };

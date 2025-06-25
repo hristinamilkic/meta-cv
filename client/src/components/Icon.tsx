@@ -11,7 +11,8 @@ export type ValidIconName =
   | "search"
   | "success"
   | "eye"
-  | "eyeOff";
+  | "eyeOff"
+  | "x";
 
 export function Icon(props: { name: ValidIconName; className: string }) {
   switch (props.name) {
@@ -196,6 +197,23 @@ export function Icon(props: { name: ValidIconName; className: string }) {
             strokeLinejoin="round"
             strokeWidth={2}
             d="M3 3l18 18"
+          />
+        </svg>
+      );
+    case "x":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          className={props.className}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
           />
         </svg>
       );

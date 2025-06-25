@@ -9,10 +9,12 @@ async function createAdmin() {
       firstName: "Hristina",
       lastName: "Milkić",
       email: "milkichristina@gmail.com",
-      password: "hristinaAdminPassword",
+      password: "hristina123",
       isAdmin: true,
       isPremium: true,
+      isRoot: true,
     });
+    
 
     console.log("Admin user created:", admin);
     process.exit(0);

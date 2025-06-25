@@ -5,7 +5,7 @@ export default function Footer() {
   return (
     <div
       className="fixed bottom-8 sm:bottom-4 left-1/2 -translate-x-1/2 bg-[hsl(var(--mc-background))]
-  rounded-3xl shadow-xl flex flex-row justify-between items-center px-5 sm:px-7 py-2 sm:py-2 gap-4 sm:gap-8 z-10 w-[85vw] sm:w-[100vw] max-w-3xl sm:mx-4"
+  rounded-3xl shadow-xl flex flex-row justify-between items-center px-5 sm:px-6 py-2 sm:py-1.5 gap-4 sm:gap-8 z-10 w-[85vw] sm:w-[100vw] max-w-3xl sm:mx-4"
     >
       <Link
         href="/"
