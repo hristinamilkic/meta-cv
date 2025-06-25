@@ -21,7 +21,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: AuthRequest, res: Response) => {
   try {
     const { email, password, firstName, lastName, isAdmin, isPremium } =
       req.body;
@@ -33,7 +33,8 @@ export const createUser = async (req: Request, res: Response) => {
       });
     }
 
-    if (isAdmin) {
+    // Prevent non-root admins from creating admin users
+    if (isAdmin && !(req.user && req.user.isRoot)) {
       return res.status(403).json({
         success: false,
         message: "Only root admins can create admin users. Use /create-admin.",
@@ -53,7 +54,7 @@ export const createUser = async (req: Request, res: Response) => {
       password,
       firstName,
       lastName,
-      isAdmin: false, // Always false here
+      isAdmin: false, // Always false here for non-root
       isPremium: !!isPremium,
     });
 
@@ -133,16 +134,16 @@ export const updateUser = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { userId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid user ID",
       });
     }
 
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -160,7 +161,7 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "You cannot delete yourself." });
     }
 
-    await User.findByIdAndDelete(id);
+    await User.findByIdAndDelete(userId);
     return res
       .status(200)
       .json({ success: true, message: "User deleted successfully" });
@@ -434,6 +435,14 @@ export const userController = {
         return res
           .status(403)
           .json({ message: "Only admins can create users" });
+      }
+      // Prevent non-root admins from creating admin users
+      if (req.body.isAdmin && !req.user.isRoot) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Only root admins can create admin users. Use /create-admin.",
+        });
       }
 
       const { firstName, lastName, email, password, isPremium } = req.body;

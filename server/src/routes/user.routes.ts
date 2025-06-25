@@ -1,5 +1,9 @@
 import express from "express";
-import { userController, register } from "../controllers/user.controller";
+import {
+  userController,
+  register,
+  deleteUser,
+} from "../controllers/user.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 import { requireAdmin, requireRoot } from "../middleware/admin.middleware";
 
@@ -34,5 +38,6 @@ router.post(
   requireRoot,
   userController.createAdminByRoot
 );
+router.delete("/:userId", requireAuth, requireAdmin, deleteUser);
 
 export default router;
