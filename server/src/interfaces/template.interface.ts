@@ -69,6 +69,17 @@ export interface ITemplate extends Document {
     css: string;
     js?: string;
   };
+  defaultData: {
+    title: string;
+    personalDetails: IPersonalDetails;
+    education: IEducation[];
+    experience: IExperience[];
+    skills: ISkill[];
+    languages: ILanguage[];
+    projects: IProject[];
+    certifications: ICertification[];
+    isPublic: boolean;
+  };
   metadata: {
     author: string;
     createdAt: Date;

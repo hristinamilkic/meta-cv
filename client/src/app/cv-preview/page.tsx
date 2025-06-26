@@ -119,7 +119,7 @@ export default function CVPreviewPage() {
         </div>
       </header>
       <main className="flex-grow p-8">
-        <div className="h-full bg-white shadow-xl rounded-lg">
+        <div id="cv-content" className="h-full bg-white shadow-xl rounded-lg">
           <iframe
             srcDoc={generatePreviewHtml()}
             title="CV Preview"

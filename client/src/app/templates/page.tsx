@@ -85,7 +85,6 @@ export default function TemplatesPage() {
   return (
     <ProtectedRoute>
       <div className="fixed inset-0 flex flex-col items-center justify-center text-white">
-     
         <div className="w-full max-w-5xl px-4">
           <Carousel
             opts={{
@@ -103,11 +102,10 @@ export default function TemplatesPage() {
                 return (
                   <CarouselItem
                     key={template._id}
-                    className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+                    className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/3"
                   >
                     <div className="p-2 flex justify-center">
                       <div className="group relative max-w-[280px] w-full">
-               
                         <div
                           className={`relative aspect-[9/16] rounded-2xl overflow-hidden transition-all duration-300 shadow-lg hover:shadow-2xl ${
                             showLock
@@ -129,7 +127,6 @@ export default function TemplatesPage() {
                             }`}
                           />
 
-                      
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <div className="absolute bottom-4 left-4 right-4">
                               <h3 className="text-white font-bold text-lg mb-1">
@@ -169,7 +166,6 @@ export default function TemplatesPage() {
                           )}
                         </div>
 
-                  
                         <div className="flex justify-center mt-4 space-x-2">
                           {colors.map((color) => (
                             <div
@@ -186,7 +182,6 @@ export default function TemplatesPage() {
               })}
             </CarouselContent>
 
-       
             <CarouselPrevious className="left-4 h-12 w-12 bg-white/10 hover:bg-white/20 border-white/20 text-white" />
             <CarouselNext className="right-4 h-12 w-12 bg-white/10 hover:bg-white/20 border-white/20 text-white" />
           </Carousel>

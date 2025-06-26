@@ -170,6 +170,21 @@ const TemplateDataSchema = new Schema(
   { _id: false }
 );
 
+const TemplateDefaultDataSchema = new Schema(
+  {
+    title: { type: String, required: true },
+    personalDetails: { type: Object, required: true },
+    education: { type: [Object], required: true },
+    experience: { type: [Object], required: true },
+    skills: { type: [Object], required: true },
+    languages: { type: [Object], required: true },
+    projects: { type: [Object], required: true },
+    certifications: { type: [Object], required: true },
+    isPublic: { type: Boolean, required: true },
+  },
+  { _id: false }
+);
+
 const TemplateMetadataSchema = new Schema(
   {
     author: {
@@ -256,6 +271,10 @@ const TemplateSchema = new Schema(
     },
     templateData: {
       type: TemplateDataSchema,
+      required: true,
+    },
+    defaultData: {
+      type: TemplateDefaultDataSchema,
       required: true,
     },
     metadata: {

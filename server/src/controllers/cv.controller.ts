@@ -40,24 +40,83 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const personalDetails = data.personalDetails || data.personalInfo || {};
+    const defaultData = template.defaultData || {};
+    const mergedData = {
+      ...defaultData,
+      ...data,
+      personalDetails: {
+        ...defaultData.personalDetails,
+        ...(data?.personalDetails || {}),
+      },
+      education: data?.education || defaultData.education || [],
+      experience: data?.experience || defaultData.experience || [],
+      skills: data?.skills || defaultData.skills || [],
+      languages: data?.languages || defaultData.languages || [],
+      projects: data?.projects || defaultData.projects || [],
+      certifications: data?.certifications || defaultData.certifications || [],
+      isPublic: data?.isPublic ?? defaultData.isPublic ?? false,
+    };
+
     const title =
-      data.title ||
-      personalDetails.fullName ||
-      personalDetails.firstName ||
+      mergedData.title ||
+      mergedData.personalDetails?.fullName ||
+      mergedData.personalDetails?.firstName ||
       "Untitled CV";
+
+    // Validate required fields
+    const requiredErrors: string[] = [];
+    if (!mergedData.personalDetails?.fullName)
+      requiredErrors.push("Full name is required");
+    if (!mergedData.personalDetails?.email)
+      requiredErrors.push("Email is required");
+    (mergedData.education || []).forEach((edu: any, i: number) => {
+      if (!edu.institution)
+        requiredErrors.push(`Education[${i + 1}]: Institution is required`);
+      if (!edu.degree)
+        requiredErrors.push(`Education[${i + 1}]: Degree is required`);
+    });
+    (mergedData.experience || []).forEach((exp: any, i: number) => {
+      if (!exp.company)
+        requiredErrors.push(`Experience[${i + 1}]: Company is required`);
+      if (!exp.position)
+        requiredErrors.push(`Experience[${i + 1}]: Position is required`);
+    });
+    (mergedData.skills || []).forEach((skill: any, i: number) => {
+      if (!skill.name) requiredErrors.push(`Skill[${i + 1}]: Name is required`);
+    });
+    (mergedData.languages || []).forEach((lang: any, i: number) => {
+      if (!lang.name)
+        requiredErrors.push(`Language[${i + 1}]: Name is required`);
+    });
+    (mergedData.projects || []).forEach((proj: any, i: number) => {
+      if (!proj.name)
+        requiredErrors.push(`Project[${i + 1}]: Name is required`);
+    });
+    (mergedData.certifications || []).forEach((cert: any, i: number) => {
+      if (!cert.name)
+        requiredErrors.push(`Certification[${i + 1}]: Name is required`);
+      if (!cert.issuer)
+        requiredErrors.push(`Certification[${i + 1}]: Issuer is required`);
+    });
+    if (requiredErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: requiredErrors,
+      });
+    }
 
     const cv = await CV.create({
       userId: req.user._id,
       title,
-      personalDetails,
-      education: data.education || [],
-      experience: data.experience || [],
-      skills: data.skills || [],
-      languages: data.languages || [],
-      projects: data.projects || [],
-      certifications: data.certifications || [],
-      isPublic: data.isPublic ?? false,
+      personalDetails: mergedData.personalDetails,
+      education: mergedData.education,
+      experience: mergedData.experience,
+      skills: mergedData.skills,
+      languages: mergedData.languages,
+      projects: mergedData.projects,
+      certifications: mergedData.certifications,
+      isPublic: mergedData.isPublic,
       template: templateId,
     });
 

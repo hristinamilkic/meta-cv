@@ -144,6 +144,10 @@ const CVSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    thumbnail: {
+      type: String,
+      required: false,
+    },
     lastModified: {
       type: Date,
       default: Date.now,

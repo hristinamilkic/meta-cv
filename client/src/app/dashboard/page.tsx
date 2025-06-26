@@ -24,25 +24,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-
-const dummyCVs = [
-  {
-    id: 1,
-    image: "/cv2.jpg",
-  },
-  {
-    id: 2,
-    image: "/cv2.jpg",
-  },
-  {
-    id: 3,
-    image: "/cv2.jpg",
-  },
-  {
-    id: 4,
-    image: "/cv2.jpg",
-  },
-];
+import { useEffect, useState } from "react";
+import api from "@/services/api";
 
 const donutData = [
   { name: "Education", value: 25, color: "#f7a18e" },
@@ -67,6 +50,27 @@ const scatterData = [
 ];
 
 export default function DashboardPage() {
+  const [cvs, setCvs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCVs = async () => {
+      try {
+        const response = await api.get("/api/cv");
+        if (response.data.success) {
+          setCvs(response.data.data);
+        } else {
+          setCvs([]);
+        }
+      } catch (err) {
+        setCvs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCVs();
+  }, []);
+
   return (
     <div className="min-h-fit w-full flex flex-col px-4 pt-28 pb-6">
       <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-6">
@@ -76,45 +80,58 @@ export default function DashboardPage() {
               My CV's
             </h2>
             <div className="flex-1 flex items-center">
-              <Carousel
-                opts={{ align: "start", loop: false }}
-                className="w-full"
-              >
-                <CarouselContent className="-ml-2 md:-ml-4">
-                  {dummyCVs.map((cv, idx) => (
-                    <CarouselItem
-                      key={cv.id}
-                      className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/3"
-                    >
-                      <div className="bg-[#1a0021] border border-pink-200/40 rounded-2xl flex flex-col items-center p-3 shadow-md">
-                        <Image
-                          alt="no image"
-                          src={cv.image}
-                          width={280}
-                          height={460}
-                          className="rounded-xl object-cover"
-                        />
-                        <div className="flex w-full itemms-center justify-center gap-2">
-                          <Button size="icon" variant="ghost">
-                            <Icon
-                              name="edit-profile"
-                              className="w-6 h-6 text-white"
-                            />
-                          </Button>
-                          <Button size="icon" variant="ghost">
-                            <Icon name="x" className="w-6 h-6 text-white" />
-                          </Button>
-                          <Button size="icon" variant="ghost">
-                            <Icon name="cv" className="w-6 h-6 text-white" />
-                          </Button>
+              {loading ? (
+                <div className="w-full flex items-center justify-center text-white">
+                  Loading...
+                </div>
+              ) : cvs.length === 0 ? (
+                <div className="w-full flex items-center justify-center text-white">
+                  No CVs found.
+                </div>
+              ) : (
+                <Carousel
+                  opts={{ align: "start", loop: false }}
+                  className="w-full"
+                >
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                    {cvs.map((cv, idx) => (
+                      <CarouselItem
+                        key={cv._id || idx}
+                        className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/3"
+                      >
+                        <div className="bg-[#1a0021] border border-pink-200/40 rounded-2xl flex flex-col items-center p-3 shadow-md">
+                          <Image
+                            alt="CV preview"
+                            src={cv.thumbnail || "/cv2.jpg"}
+                            width={280}
+                            height={460}
+                            className="rounded-xl object-cover"
+                          />
+                          <div className="text-white font-semibold mt-2 mb-1 text-center">
+                            {cv.title}
+                          </div>
+                          <div className="flex w-full itemms-center justify-center gap-2">
+                            <Button size="icon" variant="ghost">
+                              <Icon
+                                name="edit-profile"
+                                className="w-6 h-6 text-white"
+                              />
+                            </Button>
+                            <Button size="icon" variant="ghost">
+                              <Icon name="x" className="w-6 h-6 text-white" />
+                            </Button>
+                            <Button size="icon" variant="ghost">
+                              <Icon name="cv" className="w-6 h-6 text-white" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="bg-[#1a0021] text-white border-none shadow-lg rounded-lg hover:bg-[#2d0b2e]" />
-                <CarouselNext className="bg-[#1a0021] text-white border-none shadow-lg rounded-lg hover:bg-[#2d0b2e]" />
-              </Carousel>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="bg-[#1a0021] text-white border-none shadow-lg rounded-lg hover:bg-[#2d0b2e]" />
+                  <CarouselNext className="bg-[#1a0021] text-white border-none shadow-lg rounded-lg hover:bg-[#2d0b2e]" />
+                </Carousel>
+              )}
             </div>
           </div>
 

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import api from "@/services/api";
 import { ICV } from "@/interfaces/cv.interface";
+import Handlebars from "handlebars";
 
 type CVFormData = Omit<
   ICV,
@@ -31,6 +32,7 @@ interface Template {
     colorOptions?: string[];
     customStyles?: Record<string, string>;
   };
+  defaultData: CVFormData;
 }
 
 const initialCVData: CVFormData = {
@@ -80,6 +82,11 @@ function stylesToCssVars(styles: Template["styles"]) {
   return cssVars.join("\n");
 }
 
+function renderTemplateHtml(html: string, data: any) {
+  const template = Handlebars.compile(html);
+  return template(data);
+}
+
 export default function CVBuilderPage() {
   const [cvData, setCvData] = useState<CVFormData>(initialCVData);
   const [template, setTemplate] = useState<Template | null>(null);
@@ -127,8 +134,15 @@ export default function CVBuilderPage() {
 
           if (!templateResponse.data.success)
             throw new Error("Failed to load template data.");
-          console.log("Template response data:", templateResponse.data.data);
-          setTemplate(templateResponse.data.data);
+          const templateData = templateResponse.data.data;
+          console.log("Template response data:", templateData);
+          setTemplate(templateData);
+          // Set cvData to template.defaultData if present
+          if (templateData.defaultData) {
+            setCvData(templateData.defaultData);
+          } else {
+            setCvData(initialCVData);
+          }
         } else {
           console.log("No cvId or templateId, redirecting to templates");
           router.push("/templates");
@@ -143,6 +157,11 @@ export default function CVBuilderPage() {
     };
     fetchData();
   }, [cvId, templateId, router]);
+
+  // Add this useEffect to force iframe re-render on cvData change
+  useEffect(() => {
+    setRenderKey((prev) => prev + 1);
+  }, [cvData]);
 
   const handleDynamicChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -182,48 +201,25 @@ export default function CVBuilderPage() {
     }
   };
 
+  const removeSectionItem = (section: keyof CVFormData, index: number) => {
+    setCvData((prev) => {
+      const arr = [...(prev[section] as any[])];
+      arr.splice(index, 1);
+      return { ...prev, [section]: arr };
+    });
+    setRenderKey((prev) => prev + 1);
+  };
+
   const generatePreviewHtml = useCallback(() => {
     if (!template) return "";
-
-    console.log("Template received:", template);
-    console.log("Template structure:", {
-      hasTemplateData: !!template.templateData,
-      templateDataKeys: template.templateData
-        ? Object.keys(template.templateData)
-        : "undefined",
-      hasStyles: !!template.styles,
-      stylesKeys: template.styles ? Object.keys(template.styles) : "undefined",
-    });
-
-    // Handle different possible template structures
     let templateData = template.templateData;
     let styles = template.styles;
-
-    // If templateData is not at the root level, try to find it
-    if (!templateData && template.data) {
-      templateData = template.data;
-    }
-
-    // If styles is not at the root level, try to find it
-    if (!styles && template.style) {
-      styles = template.style;
-    }
-
-    // Add null checks to prevent errors
     if (!templateData || !templateData.css || !templateData.html) {
-      console.error("Missing template data:", { template, templateData });
       return "<html><body><p>Template data not available</p></body></html>";
     }
-
     const cssVars = styles ? `:root {${stylesToCssVars(styles)}}` : "";
     const css = `${cssVars}\n${templateData.css}`;
-
-    let html = templateData.html;
-    for (const [key, value] of Object.entries(cvData.personalDetails)) {
-      html = html.replaceAll(`{{personalDetails.${key}}}`, String(value || ""));
-    }
-    // This simplified loop doesn't handle nested arrays like experience. A real templating engine is needed for that.
-
+    const html = renderTemplateHtml(templateData.html, cvData);
     return `<html><head><style>${css}</style></head><body>${html}</body></html>`;
   }, [template, cvData]);
 
@@ -281,57 +277,133 @@ export default function CVBuilderPage() {
             Personal Information
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="fullName"
-              placeholder="Full Name"
-              value={cvData.personalDetails.fullName || ""}
-              onChange={(e) => handleDynamicChange(e, "personalDetails")}
-              className="w-full p-2 border rounded col-span-2"
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={cvData.personalDetails.email || ""}
-              onChange={(e) => handleDynamicChange(e, "personalDetails")}
-              className="w-full p-2 border rounded"
-            />
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Phone"
-              value={cvData.personalDetails.phone || ""}
-              onChange={(e) => handleDynamicChange(e, "personalDetails")}
-              className="w-full p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="location"
-              placeholder="Location"
-              value={cvData.personalDetails.location || ""}
-              onChange={(e) => handleDynamicChange(e, "personalDetails")}
-              className="w-full p-2 border rounded col-span-2"
-            />
-            <input
-              type="text"
-              name="website"
-              placeholder="Website/LinkedIn"
-              value={cvData.personalDetails.website || ""}
-              onChange={(e) => handleDynamicChange(e, "personalDetails")}
-              className="w-full p-2 border rounded col-span-2"
-            />
-            <textarea
-              name="summary"
-              placeholder="Summary"
-              value={cvData.personalDetails.summary || ""}
-              onChange={(e) => handleDynamicChange(e, "personalDetails")}
-              className="w-full p-2 border rounded col-span-2"
-            />
+            {Object.entries(cvData.personalDetails).map(([key, value]) => (
+              <input
+                key={key}
+                type="text"
+                name={key}
+                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                value={value || ""}
+                onChange={(e) => handleDynamicChange(e, "personalDetails")}
+                className="w-full p-2 border rounded col-span-2"
+              />
+            ))}
           </div>
         </div>
 
-        {/* All other form sections would be rendered here in a similar fashion */}
+        {[
+          {
+            label: "Experience",
+            section: "experience",
+            fields: [
+              "company",
+              "position",
+              "startDate",
+              "endDate",
+              "description",
+              "location",
+              "highlights",
+            ],
+          },
+          {
+            label: "Education",
+            section: "education",
+            fields: [
+              "institution",
+              "degree",
+              "fieldOfStudy",
+              "startDate",
+              "endDate",
+              "description",
+              "location",
+            ],
+          },
+          { label: "Skills", section: "skills", fields: ["name", "level"] },
+          {
+            label: "Languages",
+            section: "languages",
+            fields: ["name", "proficiency"],
+          },
+          {
+            label: "Projects",
+            section: "projects",
+            fields: [
+              "name",
+              "description",
+              "startDate",
+              "endDate",
+              "url",
+              "technologies",
+              "highlights",
+            ],
+          },
+          {
+            label: "Certifications",
+            section: "certifications",
+            fields: [
+              "name",
+              "issuer",
+              "date",
+              "expiryDate",
+              "credentialId",
+              "credentialUrl",
+            ],
+          },
+        ].map(({ label, section, fields }) => (
+          <div key={section} className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4 border-b pb-2 flex items-center justify-between">
+              {label}
+              <Button
+                type="button"
+                onClick={() => addSectionItem(section as keyof CVFormData)}
+                size="sm"
+              >
+                Add
+              </Button>
+            </h2>
+            {(cvData[section as keyof CVFormData] as any[]).map((item, idx) => (
+              <div key={idx} className="border rounded p-4 mb-4 relative">
+                <Button
+                  type="button"
+                  onClick={() =>
+                    removeSectionItem(section as keyof CVFormData, idx)
+                  }
+                  className="absolute top-2 right-2"
+                >
+                  Remove
+                </Button>
+                <div className="grid grid-cols-2 gap-4">
+                  {fields.map((field) => (
+                    <input
+                      key={field}
+                      type="text"
+                      name={field}
+                      placeholder={
+                        field.charAt(0).toUpperCase() + field.slice(1)
+                      }
+                      value={item[field] || ""}
+                      onChange={(e) =>
+                        handleDynamicChange(e, section as keyof CVFormData, idx)
+                      }
+                      className="w-full p-2 border rounded"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={cvData.isPublic}
+            onChange={(e) =>
+              setCvData((prev) => ({ ...prev, isPublic: e.target.checked }))
+            }
+          />
+          <label>Make CV Public</label>
+        </div>
 
         <Button onClick={handleFinishBuild} className="w-full mt-8">
           Save & Finish
