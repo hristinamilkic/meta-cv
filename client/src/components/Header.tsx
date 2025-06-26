@@ -2,14 +2,57 @@
 
 import { usePathname } from "next/navigation";
 import UserProfile from "@/components/UserProfile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@/components/Icon";
+import authService from "@/services/auth.service";
+
+function decodeJwtPayload(token: string): any {
+  try {
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
 
 export default function Header() {
   const pathname = usePathname();
   const [search, setSearch] = useState("");
-  // Dummy time tracker value
-  const timeTracker = "1h 12min";
+  const [elapsed, setElapsed] = useState("0m 0s");
+
+  useEffect(() => {
+    const token = authService.getToken();
+    if (!token) {
+      setElapsed("0s");
+      return;
+    }
+    const payload = decodeJwtPayload(token);
+    if (!payload || typeof payload.iat !== "number") {
+      setElapsed("0s");
+      return;
+    }
+    const sessionStart = new Date(payload.iat * 1000).getTime();
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = Math.floor((now - sessionStart) / 1000); // seconds
+      const hours = Math.floor(diff / 3600);
+      const minutes = Math.floor((diff % 3600) / 60);
+      const seconds = diff % 60;
+      setElapsed(
+        (hours > 0 ? `${hours}h ` : "") +
+          (minutes > 0 ? `${minutes}m ` : "") +
+          `${seconds}s`
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getPageTitle = () => {
     switch (pathname) {
@@ -72,13 +115,13 @@ export default function Header() {
           <div className="flex-1 flex justify-center">
             <UserProfile />
           </div>
-          <div className="flex-1 flex flex-col items-end">
-            <div className="text-[hsl(var(--mc-background))] font-normal text-base sm:text-lg flex items-center gap-2">
+          <div className="flex-1 flex flex-row gap-2 items-end">
+            <div className="text-[hsl(var(--mc-background))] border border-white/80 rounded-full px-4 py-1 font-normal text-base sm:text-lg flex items-center gap-2">
               <span>Time tracker:</span>
-              <span>{timeTracker}</span>
-              <Icon name="dashboard" className="w-5 h-5" />
+              <span>{elapsed}</span>
+              <Icon name="clock" className="w-5 h-5" />
             </div>
-            <div className="hidden sm:block text-gray-300 font-thin text-xs sm:text-sm mt-1">
+            <div className="hidden text-end sm:block text-gray-300 font-thin text-xs sm:text-sm mt-1">
               Designed & Developed by
               <br />
               Hristina Milkić

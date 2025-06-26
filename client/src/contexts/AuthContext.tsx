@@ -97,6 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const from = searchParams.get("from") || "/dashboard";
         router.push(from);
       }
+      // Force reload to ensure new token is used and timer resets
+      window.location.reload();
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to login";
       setError(errorMessage);
@@ -132,6 +134,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error during logout:", err);
     } finally {
       authService.removeToken();
+      // Manually clear the token cookie on the frontend
+      document.cookie =
+        "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       setUser(null);
       router.push("/login");
     }
