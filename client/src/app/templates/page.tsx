@@ -165,16 +165,6 @@ export default function TemplatesPage() {
                             </div>
                           )}
                         </div>
-
-                        <div className="flex justify-center mt-4 space-x-2">
-                          {colors.map((color) => (
-                            <div
-                              key={color}
-                              className="w-3 h-3 rounded-full border border-white/20"
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
-                        </div>
                       </div>
                     </div>
                   </CarouselItem>

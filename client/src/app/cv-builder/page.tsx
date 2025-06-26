@@ -93,6 +93,7 @@ export default function CVBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [renderKey, setRenderKey] = useState(0); // For forcing iframe re-render
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -210,6 +211,23 @@ export default function CVBuilderPage() {
     setRenderKey((prev) => prev + 1);
   };
 
+  // Handle profile photo upload
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhoto(reader.result as string);
+        setCvData((prev) => ({
+          ...prev,
+          profilePhoto: reader.result as string,
+        }));
+        setRenderKey((prev) => prev + 1);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const generatePreviewHtml = useCallback(() => {
     if (!template) return "";
     let templateData = template.templateData;
@@ -218,10 +236,13 @@ export default function CVBuilderPage() {
       return "<html><body><p>Template data not available</p></body></html>";
     }
     const cssVars = styles ? `:root {${stylesToCssVars(styles)}}` : "";
-    const css = `${cssVars}\n${templateData.css}`;
-    const html = renderTemplateHtml(templateData.html, cvData);
+    const css = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap');\nbody, * { font-family: 'Montserrat', Arial, sans-serif !important; }\n${cssVars}\n${templateData.css}`;
+    const html = renderTemplateHtml(templateData.html, {
+      ...cvData,
+      profilePhoto,
+    });
     return `<html><head><style>${css}</style></head><body>${html}</body></html>`;
-  }, [template, cvData]);
+  }, [template, cvData, profilePhoto]);
 
   const handleFinishBuild = async () => {
     const payload = {
@@ -249,175 +270,284 @@ export default function CVBuilderPage() {
         Loading...
       </div>
     );
-
   return (
-    <div className="flex h-screen">
-      <div className="w-1/2 h-full overflow-y-auto p-8 bg-white shadow-lg space-y-8">
-        <h1 className="text-3xl font-bold">Build Your CV</h1>
-        {error && (
-          <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
-
-        <input
-          type="text"
-          name="title"
-          placeholder="CV Title"
-          value={cvData.title}
-          onChange={(e) => handleDynamicChange(e, "title" as any)}
-          className="w-full p-2 border rounded"
-        />
-
-        <div>
-          <h2 className="text-2xl font-semibold mb-4 border-b pb-2">
-            Personal Information
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            {Object.entries(cvData.personalDetails).map(([key, value]) => (
-              <input
-                key={key}
-                type="text"
-                name={key}
-                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
-                value={value || ""}
-                onChange={(e) => handleDynamicChange(e, "personalDetails")}
-                className="w-full p-2 border rounded col-span-2"
-              />
-            ))}
-          </div>
-        </div>
-
-        {[
-          {
-            label: "Experience",
-            section: "experience",
-            fields: [
-              "company",
-              "position",
-              "startDate",
-              "endDate",
-              "description",
-              "location",
-              "highlights",
-            ],
-          },
-          {
-            label: "Education",
-            section: "education",
-            fields: [
-              "institution",
-              "degree",
-              "fieldOfStudy",
-              "startDate",
-              "endDate",
-              "description",
-              "location",
-            ],
-          },
-          { label: "Skills", section: "skills", fields: ["name", "level"] },
-          {
-            label: "Languages",
-            section: "languages",
-            fields: ["name", "proficiency"],
-          },
-          {
-            label: "Projects",
-            section: "projects",
-            fields: [
-              "name",
-              "description",
-              "startDate",
-              "endDate",
-              "url",
-              "technologies",
-              "highlights",
-            ],
-          },
-          {
-            label: "Certifications",
-            section: "certifications",
-            fields: [
-              "name",
-              "issuer",
-              "date",
-              "expiryDate",
-              "credentialId",
-              "credentialUrl",
-            ],
-          },
-        ].map(({ label, section, fields }) => (
-          <div key={section} className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4 border-b pb-2 flex items-center justify-between">
-              {label}
-              <Button
-                type="button"
-                onClick={() => addSectionItem(section as keyof CVFormData)}
-                size="sm"
-              >
-                Add
-              </Button>
-            </h2>
-            {(cvData[section as keyof CVFormData] as any[]).map((item, idx) => (
-              <div key={idx} className="border rounded p-4 mb-4 relative">
-                <Button
-                  type="button"
-                  onClick={() =>
-                    removeSectionItem(section as keyof CVFormData, idx)
-                  }
-                  className="absolute top-2 right-2"
-                >
-                  Remove
-                </Button>
-                <div className="grid grid-cols-2 gap-4">
-                  {fields.map((field) => (
+    <div className="flex items-center justify-center mt-24">
+      <div className="w-full h-[calc(100vh-220px)] flex flex-row px-4">
+        <div className="flex h-full w-full max-w-7xl mx-auto gap-6">
+          {/* Left: Form */}
+          <div className="w-full h-full flex">
+            <div className="w-full h-full max-w-2xl mx-auto overflow-y-auto p-8 rounded-3xl bg-[#2d033b] shadow-2xl custom-scrollbar">
+              <h2 className="text-3xl font-bold text-center text-white mb-2">
+                Edit your personal details
+              </h2>
+              <p className="text-center text-[#c7a0e7] mb-8">
+                Here you can edit your personal details.
+              </p>
+              <form className="space-y-8">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[#c7a0e7] mb-2">
+                      Full name
+                    </label>
                     <input
-                      key={field}
                       type="text"
-                      name={field}
-                      placeholder={
-                        field.charAt(0).toUpperCase() + field.slice(1)
-                      }
-                      value={item[field] || ""}
+                      name="fullName"
+                      placeholder="Full name"
+                      value={cvData.personalDetails.fullName || ""}
                       onChange={(e) =>
-                        handleDynamicChange(e, section as keyof CVFormData, idx)
+                        handleDynamicChange(e, "personalDetails")
                       }
-                      className="w-full p-2 border rounded"
+                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
                     />
-                  ))}
+                  </div>
+                  <div>
+                    <label className="block text-[#c7a0e7] mb-2">Phone</label>
+                    <input
+                      type="text"
+                      name="phone"
+                      placeholder="Phone"
+                      value={cvData.personalDetails.phone || ""}
+                      onChange={(e) =>
+                        handleDynamicChange(e, "personalDetails")
+                      }
+                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#c7a0e7] mb-2">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      name="location"
+                      placeholder="Location"
+                      value={cvData.personalDetails.location || ""}
+                      onChange={(e) =>
+                        handleDynamicChange(e, "personalDetails")
+                      }
+                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#c7a0e7] mb-2">
+                      Email address
+                    </label>
+                    <input
+                      type="text"
+                      name="email"
+                      placeholder="Email address"
+                      value={cvData.personalDetails.email || ""}
+                      onChange={(e) =>
+                        handleDynamicChange(e, "personalDetails")
+                      }
+                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[#c7a0e7] mb-2">Website</label>
+                    <input
+                      type="text"
+                      name="website"
+                      placeholder="Website"
+                      value={cvData.personalDetails.website || ""}
+                      onChange={(e) =>
+                        handleDynamicChange(e, "personalDetails")
+                      }
+                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[#c7a0e7] mb-2">Summary</label>
+                    <textarea
+                      name="summary"
+                      placeholder="Summary"
+                      value={cvData.personalDetails.summary || ""}
+                      onChange={(e) =>
+                        handleDynamicChange(e, "personalDetails")
+                      }
+                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7] resize-none"
+                      rows={3}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+                <div className="mt-8 text-center">
+                  <h3 className="text-lg text-white font-semibold mb-2">
+                    Change your photo
+                  </h3>
+                  <p className="text-[#c7a0e7] mb-4">
+                    It's very important to upload your image to your cv.
+                  </p>
+                  {profilePhoto && (
+                    <img
+                      src={profilePhoto}
+                      alt="Profile Preview"
+                      className="mx-auto mb-4 rounded-full object-cover"
+                      style={{ width: 96, height: 96 }}
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="mb-4 block mx-auto text-white"
+                  />
+                </div>
+
+                {/* Restore all original sections below, styled to match */}
+                {[
+                  {
+                    label: "Experience",
+                    section: "experience",
+                    fields: [
+                      "company",
+                      "position",
+                      "startDate",
+                      "endDate",
+                      "description",
+                      "location",
+                      "highlights",
+                    ],
+                  },
+                  {
+                    label: "Education",
+                    section: "education",
+                    fields: [
+                      "institution",
+                      "degree",
+                      "fieldOfStudy",
+                      "startDate",
+                      "endDate",
+                      "description",
+                      "location",
+                    ],
+                  },
+                  {
+                    label: "Skills",
+                    section: "skills",
+                    fields: ["name", "level"],
+                  },
+                  {
+                    label: "Languages",
+                    section: "languages",
+                    fields: ["name", "proficiency"],
+                  },
+                  {
+                    label: "Projects",
+                    section: "projects",
+                    fields: [
+                      "name",
+                      "description",
+                      "startDate",
+                      "endDate",
+                      "url",
+                      "technologies",
+                      "highlights",
+                    ],
+                  },
+                  {
+                    label: "Certifications",
+                    section: "certifications",
+                    fields: [
+                      "name",
+                      "issuer",
+                      "date",
+                      "expiryDate",
+                      "credentialId",
+                      "credentialUrl",
+                    ],
+                  },
+                ].map(({ label, section, fields }) => (
+                  <div key={section} className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 border-b pb-2 flex items-center justify-between text-white">
+                      {label}
+                      <Button
+                        type="button"
+                        onClick={() =>
+                          addSectionItem(section as keyof CVFormData)
+                        }
+                        size="sm"
+                        className="bg-[#810ca8] hover:bg-[#c7a0e7] text-white font-bold rounded-xl"
+                      >
+                        Add
+                      </Button>
+                    </h2>
+                    {(cvData[section as keyof CVFormData] as any[]).map(
+                      (item, idx) => (
+                        <div
+                          key={idx}
+                          className="border border-[#810ca8] rounded-xl p-4 mb-4 relative bg-[#2d033b]"
+                        >
+                          <Button
+                            type="button"
+                            onClick={() =>
+                              removeSectionItem(
+                                section as keyof CVFormData,
+                                idx
+                              )
+                            }
+                            className=" bg-[#810ca8] hover:bg-[#c7a0e7] text-white font-bold rounded-xl"
+                          >
+                            Remove
+                          </Button>
+                          <div className="grid grid-cols-2 gap-4">
+                            {fields.map((field) => (
+                              <input
+                                key={field}
+                                type="text"
+                                name={field}
+                                placeholder={
+                                  field.charAt(0).toUpperCase() + field.slice(1)
+                                }
+                                value={item[field] || ""}
+                                onChange={(e) =>
+                                  handleDynamicChange(
+                                    e,
+                                    section as keyof CVFormData,
+                                    idx
+                                  )
+                                }
+                                className="w-full rounded-xl bg-[#22023a] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                ))}
+
+                <Button
+                  onClick={handleFinishBuild}
+                  className="w-full mt-8 bg-[#810ca8] hover:bg-[#c7a0e7] text-white font-bold py-3 rounded-xl transition-all duration-200"
+                >
+                  Save & Finish
+                </Button>
+              </form>
+            </div>
           </div>
-        ))}
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={cvData.isPublic}
-            onChange={(e) =>
-              setCvData((prev) => ({ ...prev, isPublic: e.target.checked }))
-            }
-          />
-          <label>Make CV Public</label>
+        </div>
+        {/* Right: Preview */}
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full max-w-2xl overflow-y-auto shadow-xl rounded-3xl">
+            <iframe
+              key={renderKey}
+              srcDoc={generatePreviewHtml()}
+              title="CV Preview"
+              className="w-full h-full border-0"
+            />
+          </div>
         </div>
 
-        <Button onClick={handleFinishBuild} className="w-full mt-8">
-          Save & Finish
-        </Button>
-      </div>
-      <div className="w-1/2 h-full p-8">
-        <div className="h-full bg-white shadow-xl rounded-lg">
-          <iframe
-            key={renderKey}
-            srcDoc={generatePreviewHtml()}
-            title="CV Preview"
-            className="w-full h-full border-0"
-          />
-        </div>
+        <style jsx global>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            background: #2d033b;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #810ca8;
+            border-radius: 8px;
+          }
+        `}</style>
       </div>
     </div>
   );
