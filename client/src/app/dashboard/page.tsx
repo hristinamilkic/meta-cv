@@ -89,6 +89,17 @@ export default function DashboardPage() {
     fetchCVs();
   }, []);
 
+  // Polling for thumbnails
+  useEffect(() => {
+    if (loading) return;
+    const hasMissingThumbnail = cvs.some((cv) => !cv.thumbnail);
+    if (!hasMissingThumbnail) return;
+    const interval = setInterval(() => {
+      fetchCVs();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [cvs, loading]);
+
   const handleEdit = (cvId: string) => {
     router.push(`/cv-builder?cvId=${cvId}`);
   };

@@ -253,9 +253,14 @@ export default function CVBuilderPage() {
     setLoading(true);
     setError("");
     try {
-      const response = cvId
-        ? await api.put(`/api/cv/${cvId}`, payload)
-        : await api.post("/api/cv", payload);
+      let response;
+      if (cvId) {
+        // Editing existing CV: use PUT
+        response = await api.put(`/api/cv/${cvId}`, payload);
+      } else {
+        // Creating new CV: use POST
+        response = await api.post("/api/cv", payload);
+      }
 
       if (!response.data.success)
         throw new Error(response.data.message || "Failed to save CV");

@@ -26,7 +26,8 @@ connectDB();
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
-app.use(express.json()); // Parse JSON bodies
+app.use(express.json({ limit: "20mb" })); // Parse JSON bodies with increased limit
+app.use(express.urlencoded({ limit: "20mb", extended: true })); // Parse URL-encoded bodies with increased limit
 app.use(morgan("dev")); // Logging
 
 app.use(

@@ -38,15 +38,18 @@ export async function generateTemplateThumbnail(
   const page = await browser.newPage();
   try {
     await page.setViewport({ width, height });
-    await page.setContent(`
+    await page.setContent(
+      `
       <html>
         <head>
           <style>${css}</style>
         </head>
         <body>${html}</body>
       </html>
-    `);
-    await page.waitForTimeout(500);
+    `,
+      { waitUntil: "domcontentloaded" }
+    );
+    await page.waitForTimeout(100);
     const element = await page.$("body");
     if (!element) throw new Error("Body element not found");
     const screenshot = await element.screenshot({ encoding: "base64" });
@@ -80,7 +83,7 @@ export async function generateCVThumbnail(
     const css = `<style>${template.templateData.css}</style>`;
     const html = `<html><head>${css}</head><body>${htmlContent}</body></html>`;
     await page.setContent(html, { waitUntil: "networkidle0" });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(100);
     const element = await page.$("body");
     if (!element) throw new Error("Body element not found");
     const screenshot = await element.screenshot({ encoding: "base64" });

@@ -270,7 +270,8 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
           templateObj.templateData &&
           templateObj.templateData.html
         ) {
-          generateCVThumbnail(cv, templateObj)
+          const latestCV = cv.toObject ? cv.toObject() : cv;
+          generateCVThumbnail(latestCV, templateObj)
             .then((thumbnail) => {
               cv.thumbnail = thumbnail;
               return cv.save();
