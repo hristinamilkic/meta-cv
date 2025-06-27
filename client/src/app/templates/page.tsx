@@ -89,7 +89,7 @@ export default function TemplatesPage() {
           <Carousel
             opts={{
               align: "center",
-              loop: true,
+              loop: false,
             }}
             className="w-full"
           >
@@ -107,7 +107,7 @@ export default function TemplatesPage() {
                     <div className="p-2 flex justify-center">
                       <div className="group relative max-w-[280px] w-full">
                         <div
-                          className={`relative aspect-[9/16] rounded-2xl overflow-hidden transition-all duration-300 shadow-lg hover:shadow-2xl ${
+                          className={`relative aspect-[9/16] rounded-2xl overflow-hidden transition-all duration-300 shadow-lg  ${
                             showLock
                               ? "cursor-not-allowed"
                               : "cursor-pointer hover:scale-105"
@@ -172,8 +172,8 @@ export default function TemplatesPage() {
               })}
             </CarouselContent>
 
-            <CarouselPrevious className="left-4 h-12 w-12 bg-white/10 hover:bg-white/20 border-white/20 text-white" />
-            <CarouselNext className="right-4 h-12 w-12 bg-white/10 hover:bg-white/20 border-white/20 text-white" />
+            <CarouselPrevious className="bg-transparent shadow-none" />
+            <CarouselNext className="bg-transparent shadow-none" />
           </Carousel>
         </div>
       </div>

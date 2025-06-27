@@ -5,6 +5,7 @@ import { PDFService } from "../services/pdf.service";
 import templateModel from "../models/template.model";
 import { ICV } from "../interfaces/cv.interface";
 import { ITemplate } from "../interfaces/template.interface";
+import { generateCVThumbnail } from "../services/template-thumbnail.service";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -119,6 +120,16 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       isPublic: mergedData.isPublic,
       template: templateId,
     });
+
+    // Generate thumbnail and update CV asynchronously (do not block response)
+    generateCVThumbnail(mergedData, template)
+      .then((thumbnail) => {
+        cv.thumbnail = thumbnail;
+        return cv.save();
+      })
+      .catch((thumbErr) => {
+        console.error("Failed to generate CV thumbnail:", thumbErr);
+      });
 
     res.status(201).json({
       success: true,
@@ -239,6 +250,39 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
         message: "CV not found",
       });
     }
+
+    // Regenerate thumbnail if CV and template exist asynchronously (do not block response)
+    (async () => {
+      try {
+        let templateObj: any = cv.template;
+        if (
+          !templateObj ||
+          typeof templateObj !== "object" ||
+          !("templateData" in templateObj) ||
+          !templateObj.templateData?.html
+        ) {
+          templateObj = await templateModel.findById(
+            cv.template?.toString?.() || cv.template
+          );
+        }
+        if (
+          templateObj &&
+          templateObj.templateData &&
+          templateObj.templateData.html
+        ) {
+          generateCVThumbnail(cv, templateObj)
+            .then((thumbnail) => {
+              cv.thumbnail = thumbnail;
+              return cv.save();
+            })
+            .catch((thumbErr) => {
+              console.error("Failed to regenerate CV thumbnail:", thumbErr);
+            });
+        }
+      } catch (thumbErr) {
+        console.error("Failed to regenerate CV thumbnail:", thumbErr);
+      }
+    })();
 
     res.json({
       success: true,

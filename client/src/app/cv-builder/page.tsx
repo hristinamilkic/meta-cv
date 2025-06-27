@@ -250,6 +250,8 @@ export default function CVBuilderPage() {
       data: cvData,
       title: cvData.title,
     };
+    setLoading(true);
+    setError("");
     try {
       const response = cvId
         ? await api.put(`/api/cv/${cvId}`, payload)
@@ -261,6 +263,8 @@ export default function CVBuilderPage() {
       router.push(`/cv-preview?cvId=${savedCv._id}`);
     } catch (err: any) {
       setError(err.message || "Failed to save CV.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -275,15 +279,18 @@ export default function CVBuilderPage() {
       <div className="w-full h-[calc(100vh-220px)] flex flex-row px-4">
         <div className="flex h-full w-full max-w-7xl mx-auto gap-6">
           {/* Left: Form */}
-          <div className="w-full h-full flex">
-            <div className="w-full h-full max-w-2xl mx-auto overflow-y-auto p-8 rounded-3xl bg-[#2d033b] shadow-2xl custom-scrollbar">
+          <div className="w-1/3 h-full flex">
+            <div className="w-full h-full max-w-xl mx-auto p-8 rounded-3xl bg-[#2d033b] shadow-2xl flex flex-col">
               <h2 className="text-3xl font-bold text-center text-white mb-2">
                 Edit your personal details
               </h2>
               <p className="text-center text-[#c7a0e7] mb-8">
                 Here you can edit your personal details.
               </p>
-              <form className="space-y-8">
+              <form
+                className="space-y-8 overflow-y-auto custom-scrollbar flex-1 p-2"
+                onSubmit={(e) => e.preventDefault()}
+              >
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-[#c7a0e7] mb-2">
@@ -517,6 +524,7 @@ export default function CVBuilderPage() {
                 ))}
 
                 <Button
+                  type="button"
                   onClick={handleFinishBuild}
                   className="w-full mt-8 bg-[#810ca8] hover:bg-[#c7a0e7] text-white font-bold py-3 rounded-xl transition-all duration-200"
                 >
@@ -525,19 +533,18 @@ export default function CVBuilderPage() {
               </form>
             </div>
           </div>
-        </div>
-        {/* Right: Preview */}
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="w-full h-full max-w-2xl overflow-y-auto shadow-xl rounded-3xl">
-            <iframe
-              key={renderKey}
-              srcDoc={generatePreviewHtml()}
-              title="CV Preview"
-              className="w-full h-full border-0"
-            />
+          {/* Right: Preview */}
+          <div className="w-2/3 h-full flex items-center justify-center">
+            <div className="w-full h-full overflow-y-auto bg-white rounded-3xl">
+              <iframe
+                key={renderKey}
+                srcDoc={generatePreviewHtml()}
+                title="CV Preview"
+                className="w-full h-full border-0"
+              />
+            </div>
           </div>
         </div>
-
         <style jsx global>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 8px;

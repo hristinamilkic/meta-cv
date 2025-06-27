@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import api from "@/services/api";
+import Handlebars from "handlebars";
+import cvService from "@/services/cv.service";
 
 function stylesToCssVars(styles: any) {
   const cssVars = [];
@@ -41,6 +43,8 @@ export default function CVPreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cvId = searchParams.get("cvId");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [errorDialog, setErrorDialog] = useState<string | null>(null);
 
   useEffect(() => {
     if (!cvId) {
@@ -72,20 +76,34 @@ export default function CVPreviewPage() {
       : "";
     const css = `${cssVars}\n${template.templateData.css}`;
 
-    let html = template.templateData.html;
-    // Basic placeholder replacement
-    for (const [key, value] of Object.entries(cvData.personalDetails)) {
-      html = html.replaceAll(`{{personalDetails.${key}}}`, String(value || ""));
-    }
-    // A proper templating engine is needed for array sections (experience, etc.)
+    // Compile the template HTML with Handlebars
+    const compiled = Handlebars.compile(template.templateData.html);
+    const htmlContent = compiled(cvData);
 
-    return `<html><head><style>${css}</style></head><body>${html}</body></html>`;
+    return `<html><head><style>${css}</style></head><body>${htmlContent}</body></html>`;
   }, [cv]);
 
-  const handleDownload = () => {
-    window.open(`/api/cv/${cvId}/download`, "_blank");
+  const handleDownload = async (cvId: string, title: string) => {
+    setActionLoading(cvId + "-download");
+    try {
+      const blob = await cvService.downloadCV(cvId);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download =
+        (title ? title.replace(/[^a-zA-Z0-9-_\. ]/g, "_") : "CV") + ".pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setErrorDialog("Failed to download CV.");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
+  if (!cvId) return;
   const handleEdit = () => {
     router.push(`/cv-builder?cvId=${cvId}`);
   };
@@ -105,28 +123,83 @@ export default function CVPreviewPage() {
     );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white shadow-md p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold">{cv.title || "CV Preview"}</h1>
-        <div className="flex space-x-4">
-          <Button variant="outline" onClick={handleEdit}>
-            Edit
-          </Button>
-          <Button onClick={handleDownload}>Download PDF</Button>
-          <Link href="/dashboard">
-            <Button variant="secondary">Done</Button>
-          </Link>
-        </div>
-      </header>
-      <main className="flex-grow p-8">
-        <div id="cv-content" className="h-full bg-white shadow-xl rounded-lg">
+    <div className="min-h-screen flex items-center justify-center bg-[#2d033b] relative">
+      <div className="flex flex-col items-center justify-center w-full h-full">
+        <div
+          className="w-full h-full max-w-3xl mx-auto bg-transparent flex items-center justify-center"
+          style={{ minHeight: "80vh" }}
+        >
           <iframe
             srcDoc={generatePreviewHtml()}
             title="CV Preview"
-            className="w-full h-full border-0"
+            className="w-full h-[80vh] border-0 rounded-2xl shadow-2xl"
+            style={{ background: "transparent" }}
           />
         </div>
-      </main>
+      </div>
+      {/* Floating action buttons */}
+      <div className="fixed right-24 top-1/2 transform -translate-y-1/2 flex flex-col space-y-8 z-50">
+        <Button
+          onClick={handleEdit}
+          size="icon"
+          className="bg-white shadow-lg rounded-full p-4 hover:bg-gray-100"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8 text-[#810ca8]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3h3z"
+            />
+          </svg>
+        </Button>
+        <Button
+          onClick={() => handleDownload(cvId, cv?.title || "")}
+          size="icon"
+          className="bg-white shadow-lg rounded-full p-4 hover:bg-gray-100"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8 text-[#810ca8]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
+            />
+          </svg>
+        </Button>
+        <Button
+          onClick={() => router.push("/dashboard")}
+          size="icon"
+          className="bg-white shadow-lg rounded-full p-4 hover:bg-gray-100"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8 text-[#810ca8]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        </Button>
+      </div>
     </div>
   );
 }

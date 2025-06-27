@@ -16,7 +16,9 @@ export type ValidIconName =
   | "edit-profile"
   | "dashboard"
   | "logout"
-  | "clock";
+  | "clock"
+  | "arrow-left"
+  | "arrow-right";
 
 export function Icon(props: { name: ValidIconName; className: string }) {
   switch (props.name) {
@@ -279,6 +281,40 @@ export function Icon(props: { name: ValidIconName; className: string }) {
           <path
             fill="currentColor"
             d="M11.5 3a9.5 9.5 0 0 1 9.5 9.5a9.5 9.5 0 0 1-9.5 9.5A9.5 9.5 0 0 1 2 12.5A9.5 9.5 0 0 1 11.5 3m0 1A8.5 8.5 0 0 0 3 12.5a8.5 8.5 0 0 0 8.5 8.5a8.5 8.5 0 0 0 8.5-8.5A8.5 8.5 0 0 0 11.5 4M11 7h1v5.42l4.7 2.71l-.5.87l-5.2-3z"
+          />
+        </svg>
+      );
+    case "arrow-left":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={props.className}
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.5"
+            d="m14 7l-5 5l5 5"
+          />
+        </svg>
+      );
+    case "arrow-right":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={props.className}
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.5"
+            d="m10 17l5-5l-5-5"
           />
         </svg>
       );

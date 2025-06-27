@@ -86,7 +86,7 @@ const cvService = {
   },
 
   downloadCV: async (id: string) => {
-    const response = await api.get(`/cv/${id}/download`, {
+    const response = await api.get(`/api/cv/${id}/download`, {
       responseType: "blob",
     });
     return response.data;

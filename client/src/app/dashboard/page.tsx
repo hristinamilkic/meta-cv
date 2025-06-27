@@ -26,6 +26,18 @@ import {
 } from "@/components/ui/carousel";
 import { useEffect, useState } from "react";
 import api from "@/services/api";
+import cvService from "@/services/cv.service";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 const donutData = [
   { name: "Education", value: 25, color: "#f7a18e" },
@@ -52,24 +64,66 @@ const scatterData = [
 export default function DashboardPage() {
   const [cvs, setCvs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const router = useRouter();
+  const [errorDialog, setErrorDialog] = useState<string | null>(null);
+
+  // Move fetchCVs here so it's available everywhere in the component
+  const fetchCVs = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/api/cv");
+      if (response.data.success) {
+        setCvs(response.data.data);
+      } else {
+        setCvs([]);
+      }
+    } catch (err) {
+      setCvs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCVs = async () => {
-      try {
-        const response = await api.get("/api/cv");
-        if (response.data.success) {
-          setCvs(response.data.data);
-        } else {
-          setCvs([]);
-        }
-      } catch (err) {
-        setCvs([]);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchCVs();
   }, []);
+
+  const handleEdit = (cvId: string) => {
+    router.push(`/cv-builder?cvId=${cvId}`);
+  };
+
+  const handleDelete = async (cvId: string) => {
+    setActionLoading(cvId + "-delete");
+    try {
+      await api.delete(`/api/cv/${cvId}`);
+      await fetchCVs();
+    } catch (err) {
+      setErrorDialog("Failed to delete CV.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDownload = async (cvId: string, title: string) => {
+    setActionLoading(cvId + "-download");
+    try {
+      const blob = await cvService.downloadCV(cvId);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download =
+        (title ? title.replace(/[^a-zA-Z0-9-_\. ]/g, "_") : "CV") + ".pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setErrorDialog("Failed to download CV.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div className="min-h-fit w-full flex flex-col px-4 pt-28 pb-6">
@@ -93,7 +147,7 @@ export default function DashboardPage() {
                   opts={{ align: "start", loop: false }}
                   className="w-full"
                 >
-                  <CarouselContent className="-ml-2 md:-ml-4">
+                  <CarouselContent>
                     {cvs.map((cv, idx) => (
                       <CarouselItem
                         key={cv._id || idx}
@@ -102,34 +156,122 @@ export default function DashboardPage() {
                         <div className="bg-[#1a0021] border border-pink-200/40 rounded-2xl flex flex-col items-center p-3 shadow-md">
                           <Image
                             alt="CV preview"
-                            src={cv.thumbnail || "/cv2.jpg"}
+                            src={cv.thumbnail ? cv.thumbnail : "/cv2.jpg"}
                             width={280}
                             height={460}
                             className="rounded-xl object-cover"
                           />
+                          {!cv.thumbnail && (
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                              <svg
+                                className="animate-spin h-8 w-8 text-pink-400"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v8z"
+                                ></path>
+                              </svg>
+                            </div>
+                          )}
                           <div className="text-white font-semibold mt-2 mb-1 text-center">
                             {cv.title}
                           </div>
-                          <div className="flex w-full itemms-center justify-center gap-2">
-                            <Button size="icon" variant="ghost">
+                          <div className="flex w-full items-center justify-center gap-2 mt-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEdit(cv._id)}
+                              disabled={actionLoading === cv._id + "-edit"}
+                            >
                               <Icon
                                 name="edit-profile"
                                 className="w-6 h-6 text-white"
                               />
                             </Button>
-                            <Button size="icon" variant="ghost">
-                              <Icon name="x" className="w-6 h-6 text-white" />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDelete(cv._id)}
+                              disabled={actionLoading === cv._id + "-delete"}
+                            >
+                              {actionLoading === cv._id + "-delete" ? (
+                                <svg
+                                  className="animate-spin h-5 w-5 text-red-400"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v8z"
+                                  ></path>
+                                </svg>
+                              ) : (
+                                <Icon name="x" className="w-6 h-6 text-white" />
+                              )}
                             </Button>
-                            <Button size="icon" variant="ghost">
-                              <Icon name="cv" className="w-6 h-6 text-white" />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDownload(cv._id, cv.title)}
+                              disabled={actionLoading === cv._id + "-download"}
+                            >
+                              {actionLoading === cv._id + "-download" ? (
+                                <svg
+                                  className="animate-spin h-5 w-5 text-pink-400"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v8z"
+                                  ></path>
+                                </svg>
+                              ) : (
+                                <Icon
+                                  name="cv"
+                                  className="w-6 h-6 text-white"
+                                />
+                              )}
                             </Button>
                           </div>
                         </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="bg-[#1a0021] text-white border-none shadow-lg rounded-lg hover:bg-[#2d0b2e]" />
-                  <CarouselNext className="bg-[#1a0021] text-white border-none shadow-lg rounded-lg hover:bg-[#2d0b2e]" />
+                  <CarouselPrevious />
+                  <CarouselNext />
                 </Carousel>
               )}
             </div>
@@ -252,6 +394,21 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Error Dialog */}
+      <Dialog open={!!errorDialog} onOpenChange={() => setErrorDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+            <DialogDescription>{errorDialog}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

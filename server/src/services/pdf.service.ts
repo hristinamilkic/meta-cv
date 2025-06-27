@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import puppeteer from "puppeteer";
 import { ITemplate } from "../interfaces/template.interface";
+import Handlebars from "handlebars";
 
 interface CVDataForPDF {
   personalDetails: Record<string, any>;
@@ -27,45 +28,15 @@ export class PDFService {
       const page = await browser.newPage();
       await page.setViewport({ width: 1200, height: 800 });
 
-      const html = `
-        <html>
-          <head><title>CV</title></head>
-          <body style="font-family: 'Montserrat', Arial, sans-serif; padding: 20px;">
-            <h1>${cv.personalDetails?.fullName || "CV"}</h1>
-            <p>${cv.personalDetails?.email || ""}</p>
-            <p>${cv.personalDetails?.phone || ""}</p>
-            <p>${cv.personalDetails?.location || ""}</p>
-            ${
-              cv.personalDetails?.summary
-                ? `<p>${cv.personalDetails.summary}</p>`
-                : ""
-            }
-            ${
-              cv.experience
-                ?.map(
-                  (exp) =>
-                    `<p><strong>${exp.position}</strong> at ${exp.company}</p>`
-                )
-                .join("") || ""
-            }
-            ${
-              cv.education
-                ?.map(
-                  (edu) =>
-                    `<p><strong>${edu.degree}</strong> from ${edu.institution}</p>`
-                )
-                .join("") || ""
-            }
-            ${
-              cv.skills
-                ?.map((skill) => `<span>${skill.name || skill}</span>`)
-                .join(", ") || ""
-            }
-          </body>
-        </html>
-      `;
+      // Compile template HTML with Handlebars
+      const compiled = Handlebars.compile(template.templateData.html);
+      const htmlContent = compiled({ ...cv });
 
-      await page.setContent(html);
+      // Combine with template CSS
+      const css = `<style>${template.templateData.css}</style>`;
+      const html = `<html><head>${css}</head><body>${htmlContent}</body></html>`;
+
+      await page.setContent(html, { waitUntil: "networkidle0" });
       await page.waitForTimeout(1000);
 
       const pdfBuffer = await page.pdf({
