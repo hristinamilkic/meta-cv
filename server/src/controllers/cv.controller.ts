@@ -413,14 +413,19 @@ export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const totalCVs = await CV.countDocuments({ userId: req.user._id });
+    const userId = req.user._id;
+
+    // Total CVs
+    const totalCVs = await CV.countDocuments({ userId });
+    // CVs created in the last week
     const lastWeekCVs = await CV.countDocuments({
-      userId: req.user._id,
+      userId,
       createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     });
 
+    // Template usage
     const templateUsage = await CV.aggregate([
-      { $match: { userId: req.user._id } },
+      { $match: { userId } },
       { $group: { _id: "$template", count: { $sum: 1 } } },
       {
         $lookup: {
@@ -434,12 +439,90 @@ export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
       { $project: { templateName: "$template.name", count: 1, _id: 0 } },
     ]);
 
+    // Most common skills
+    const skillAgg = await CV.aggregate([
+      { $match: { userId } },
+      { $unwind: "$skills" },
+      { $group: { _id: "$skills.name", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]);
+    const mostCommonSkills = skillAgg.map((s) => ({
+      name: s._id,
+      count: s.count,
+    }));
+
+    // Most common languages
+    const langAgg = await CV.aggregate([
+      { $match: { userId } },
+      { $unwind: "$languages" },
+      { $group: { _id: "$languages.name", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]);
+    const mostCommonLanguages = langAgg.map((l) => ({
+      name: l._id,
+      count: l.count,
+    }));
+
+    // CV creation trend (per month for last 12 months)
+    const now = new Date();
+    const lastYear = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
+    const trendAgg = await CV.aggregate([
+      { $match: { userId, createdAt: { $gte: lastYear } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+    const creationTrend = trendAgg.map((t) => ({
+      month: t._id,
+      count: t.count,
+    }));
+
+    // Average number of sections per CV
+    const allCVs = await CV.find({ userId });
+    let totalSections = 0;
+    allCVs.forEach((cv) => {
+      totalSections +=
+        (cv.education?.length ? 1 : 0) +
+        (cv.experience?.length ? 1 : 0) +
+        (cv.skills?.length ? 1 : 0) +
+        (cv.languages?.length ? 1 : 0) +
+        (cv.projects?.length ? 1 : 0) +
+        (cv.certifications?.length ? 1 : 0);
+    });
+    const avgSectionsPerCV = allCVs.length ? totalSections / allCVs.length : 0;
+
+    // CVs with the most sections
+    const cvSectionCounts = allCVs.map((cv) => ({
+      id: cv._id,
+      title: cv.title,
+      sectionCount:
+        (cv.education?.length ? 1 : 0) +
+        (cv.experience?.length ? 1 : 0) +
+        (cv.skills?.length ? 1 : 0) +
+        (cv.languages?.length ? 1 : 0) +
+        (cv.projects?.length ? 1 : 0) +
+        (cv.certifications?.length ? 1 : 0),
+    }));
+    cvSectionCounts.sort((a, b) => b.sectionCount - a.sectionCount);
+    const mostSectionCVs = cvSectionCounts.slice(0, 5);
+
     res.json({
       success: true,
       data: {
         totalCVs,
         lastWeekCVs,
         templateUsage,
+        mostCommonSkills,
+        mostCommonLanguages,
+        creationTrend,
+        avgSectionsPerCV,
+        mostSectionCVs,
       },
     });
   } catch (error) {

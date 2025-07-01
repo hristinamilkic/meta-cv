@@ -77,3 +77,15 @@ export interface ICV extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+function sum(...numbers: number[]): number {
+  let result: number = 0;
+  for (let i = 0; i < numbers.length; i++) {
+    result += numbers[i];
+  }
+
+  return result;
+}
+
+const numbers: number[] = [1, 2, 3, 4, 5];
+console.log(sum(...numbers));

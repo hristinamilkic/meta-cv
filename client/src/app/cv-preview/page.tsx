@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import Icon from "@/components/Icon";
 import api from "@/services/api";
 import Handlebars from "handlebars";
 import cvService from "@/services/cv.service";
@@ -11,7 +11,6 @@ import cvService from "@/services/cv.service";
 function stylesToCssVars(styles: any) {
   const cssVars = [];
 
-  // Convert camelCase to kebab-case and create CSS variables
   if (styles.primaryColor)
     cssVars.push(`--primary-color: ${styles.primaryColor};`);
   if (styles.secondaryColor)
@@ -25,7 +24,6 @@ function stylesToCssVars(styles: any) {
     cssVars.push(`--border-radius: ${styles.borderRadius};`);
   if (styles.boxShadow) cssVars.push(`--box-shadow: ${styles.boxShadow};`);
 
-  // Add custom styles if they exist
   if (styles.customStyles) {
     Object.entries(styles.customStyles).forEach(([key, value]) => {
       const cssVarName = `--${key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}`;
@@ -37,7 +35,7 @@ function stylesToCssVars(styles: any) {
 }
 
 export default function CVPreviewPage() {
-  const [cv, setCv] = useState<any>(null); // Using any for simplicity here
+  const [cv, setCv] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -74,9 +72,9 @@ export default function CVPreviewPage() {
     const cssVars = template.styles
       ? `:root {${stylesToCssVars(template.styles)}}`
       : "";
-    const css = `${cssVars}\n${template.templateData.css}`;
+    const resetCss = "html,body{margin:0;padding:0;box-sizing:border-box;}";
+    const css = `${resetCss}\n${cssVars}\n${template.templateData.css}`;
 
-    // Compile the template HTML with Handlebars
     const compiled = Handlebars.compile(template.templateData.html);
     const htmlContent = compiled(cvData);
 
@@ -110,9 +108,7 @@ export default function CVPreviewPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
+      <div className="min-h-screen flex items-center justify-center"></div>
     );
 
   if (error)
@@ -123,81 +119,48 @@ export default function CVPreviewPage() {
     );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#2d033b] relative">
+    <div className="min-h-screen flex items-center justify-center relative py-16 rounded-xl">
       <div className="flex flex-col items-center justify-center w-full h-full">
         <div
-          className="w-full h-full max-w-3xl mx-auto bg-transparent flex items-center justify-center"
-          style={{ minHeight: "80vh" }}
+          className="w-full max-w-3xl mx-auto flex items-center justify-center"
+          style={{ minHeight: "60vh" }}
         >
           <iframe
             srcDoc={generatePreviewHtml()}
             title="CV Preview"
-            className="w-full h-[80vh] border-0 rounded-2xl shadow-2xl"
+            className="rounded-3xl max-w-3xl w-full h-[70vh]"
             style={{ background: "transparent" }}
           />
         </div>
       </div>
-      {/* Floating action buttons */}
+
       <div className="fixed right-24 top-1/2 transform -translate-y-1/2 flex flex-col space-y-8 z-50">
         <Button
           onClick={handleEdit}
           size="icon"
-          className="bg-white shadow-lg rounded-full p-4 hover:bg-gray-100"
+          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-full p-6 hover:bg-[hsl(var(--mc-primary))]"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8 text-[#810ca8]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3h3z"
-            />
-          </svg>
+          <Icon name="edit" className="w-6 h-6 text-[hsl(var(--mc-primary))]" />
         </Button>
         <Button
           onClick={() => handleDownload(cvId, cv?.title || "")}
           size="icon"
-          className="bg-white shadow-lg rounded-full p-4 hover:bg-gray-100"
+          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-full p-6 hover:bg-[hsl(var(--mc-accent))] hover:text-white"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8 text-[#810ca8]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
-            />
-          </svg>
+          <Icon
+            name="download"
+            className="h-8 w-8 text-[hsl(var(--mc-primary))]"
+          />
         </Button>
         <Button
           onClick={() => router.push("/dashboard")}
           size="icon"
-          className="bg-white shadow-lg rounded-full p-4 hover:bg-gray-100"
+          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-full p-6 hover:bg-gray-100"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8 text-[#810ca8]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
+          <Icon
+            name="arrow-left"
+            className="h-8 w-8 text-[hsl(var(--mc-primary))]"
+          />
         </Button>
       </div>
     </div>

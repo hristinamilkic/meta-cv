@@ -38,6 +38,9 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import Header from "@/components/Header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
 const donutData = [
   { name: "Education", value: 25, color: "#f7a18e" },
@@ -63,12 +66,15 @@ const scatterData = [
 
 export default function DashboardPage() {
   const [cvs, setCvs] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activeTab1, setActiveTab1] = useState("template");
+  const [activeTab2, setActiveTab2] = useState("skills");
   const router = useRouter();
   const [errorDialog, setErrorDialog] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<"cvs" | "analytics">("cvs");
 
-  // Move fetchCVs here so it's available everywhere in the component
   const fetchCVs = async () => {
     setLoading(true);
     try {
@@ -85,11 +91,22 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchAnalytics = async () => {
+    try {
+      const response = await api.get("/api/cv/analytics");
+      if (response.data.success) {
+        setAnalytics(response.data.data);
+      }
+    } catch (err) {
+      setAnalytics(null);
+    }
+  };
+
   useEffect(() => {
     fetchCVs();
+    fetchAnalytics();
   }, []);
 
-  // Polling for thumbnails
   useEffect(() => {
     if (loading) return;
     const hasMissingThumbnail = cvs.some((cv) => !cv.thumbnail);
@@ -137,289 +154,374 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-fit w-full flex flex-col px-4 pt-28 pb-6">
-      <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="col-span-1 lg:col-span-2 h-full bg-[#2d0b2e]/90 rounded-2xl py-8 px-6 flex flex-col justify-between">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6">
-              My CV's
-            </h2>
-            <div className="flex-1 flex items-center">
-              {loading ? (
-                <div className="w-full flex items-center justify-center text-white">
-                  Loading...
-                </div>
-              ) : cvs.length === 0 ? (
-                <div className="w-full flex items-center justify-center text-white">
-                  No CVs found.
-                </div>
-              ) : (
-                <Carousel
-                  opts={{ align: "start", loop: false }}
-                  className="w-full"
-                >
-                  <CarouselContent>
-                    {cvs.map((cv, idx) => (
-                      <CarouselItem
-                        key={cv._id || idx}
-                        className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/3"
-                      >
-                        <div className="bg-[#1a0021] border border-pink-200/40 rounded-2xl flex flex-col items-center p-3 shadow-md">
-                          <Image
-                            alt="CV preview"
-                            src={cv.thumbnail ? cv.thumbnail : "/cv2.jpg"}
-                            width={280}
-                            height={460}
-                            className="rounded-xl object-cover"
-                          />
-                          {!cv.thumbnail && (
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                              <svg
-                                className="animate-spin h-8 w-8 text-pink-400"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                ></circle>
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8v8z"
-                                ></path>
-                              </svg>
+    <>
+      <Header
+        selectedTab={selectedTab}
+        onTabChange={(tab) => setSelectedTab(tab as "cvs" | "analytics")}
+      />
+      <div className="min-h-fit w-full flex flex-col px-4 pt-28 pb-6">
+        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-8 bg-[#2d0b2e] rounded-3xl shadow-xl p-8">
+          {selectedTab === "cvs" && (
+            <div className="w-full flex flex-col justify-center min-h-[400px] max-h-[520px]">
+              <h2 className="text-2xl sm:text-3xl font-thin pl-4 text-white mb-5">
+                My CV's
+              </h2>
+              <div className="relative w-full flex items-center justify-center min-h-0">
+                {loading ? (
+                  <Carousel
+                    opts={{ align: "start", loop: false }}
+                    className="w-full min-h-0"
+                  >
+                    <CarouselContent>
+                      {[1, 2, 3].map((i) => (
+                        <CarouselItem
+                          key={i}
+                          className="pl-4 md:pl-8 lg:basis-1/3 min-h-0"
+                        >
+                          <div className="flex flex-col items-center bg-pink-800/10 border border-pink-400 rounded-2xl p-7 shadow-lg min-h-0">
+                            <Skeleton className="rounded-2xl object-cover min-w-[180px] min-h-[260px] max-w-[240px] max-h-[320px] w-[240px] h-[320px]" />
+                            <Skeleton className="h-7 w-40 mt-4 mb-2 rounded" />
+                            <div className="flex w-fit h-full items-center justify-center gap-5 mt-2">
+                              <Skeleton className="w-12 h-12 rounded-full" />
+                              <Skeleton className="w-12 h-12 rounded-full" />
+                              <Skeleton className="w-12 h-12 rounded-full" />
                             </div>
-                          )}
-                          <div className="text-white font-semibold mt-2 mb-1 text-center">
-                            {cv.title}
                           </div>
-                          <div className="flex w-full items-center justify-center gap-2 mt-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleEdit(cv._id)}
-                              disabled={actionLoading === cv._id + "-edit"}
-                            >
-                              <Icon
-                                name="edit-profile"
-                                className="w-6 h-6 text-white"
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+                ) : (
+                  <Carousel
+                    opts={{ align: "start", loop: false }}
+                    className="w-full min-h-0"
+                  >
+                    <CarouselContent>
+                      {cvs.map((cv, idx) => (
+                        <CarouselItem
+                          key={cv._id || idx}
+                          className="pl-4 md:pl-8 lg:basis-1/3 min-h-0"
+                        >
+                          <div className="flex flex-col items-center bg-pink-800/10 border border-pink-400 rounded-2xl p-7 shadow-lg min-h-0">
+                            <Image
+                              alt="CV preview"
+                              src={cv.thumbnail ? cv.thumbnail : "/cv2.jpg"}
+                              width={240}
+                              height={320}
+                              className="rounded-2xl object-cover min-w-[180px] min-h-[260px] max-w-[240px] max-h-[320px]"
+                            />
+                            <div className="text-white font-light text-lg text-center truncate max-w-[220px] mt-4 mb-2">
+                              {cv.title}
+                            </div>
+                            <div className="flex w-fit h-full items-center justify-center gap-5">
+                              <Button
+                                className="bg-transparent"
+                                onClick={() => handleEdit(cv._id)}
+                                disabled={actionLoading === cv._id + "-edit"}
+                              >
+                                {actionLoading === cv._id + "-edit" ? (
+                                  <Icon
+                                    name="loading"
+                                    className="w-9 h-9 text-white"
+                                  />
+                                ) : (
+                                  <Icon
+                                    name="admin"
+                                    className="w-9 h-9 text-white"
+                                  />
+                                )}
+                              </Button>
+                              <Button
+                                className="bg-transparent"
+                                onClick={() => handleDelete(cv._id)}
+                                disabled={actionLoading === cv._id + "-delete"}
+                              >
+                                {actionLoading === cv._id + "-delete" ? (
+                                  <Icon
+                                    name="loading"
+                                    className="w-9 h-9 text-white"
+                                  />
+                                ) : (
+                                  <Icon
+                                    name="x"
+                                    className="w-6 h-6 text-white"
+                                  />
+                                )}
+                              </Button>
+                              <Button
+                                className="bg-transparent"
+                                onClick={() => handleDownload(cv._id, cv.title)}
+                                disabled={
+                                  actionLoading === cv._id + "-download"
+                                }
+                              >
+                                {actionLoading === cv._id + "-download" ? (
+                                  <Icon
+                                    name="loading"
+                                    className="w-9 h-9 text-white"
+                                  />
+                                ) : (
+                                  <Icon
+                                    name="download"
+                                    className="w-9 h-9 text-white"
+                                  />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="bg-transparent text-[hsl(var(--mc-background))] border-2 border-[hsl(var(--mc-background))]" />
+                    <CarouselNext className="bg-transparent text-[hsl(var(--mc-background))] border-2 border-[hsl(var(--mc-background))]" />
+                  </Carousel>
+                )}
+              </div>
+            </div>
+          )}
+          {selectedTab === "analytics" && (
+            <div className="w-full flex flex-col items-center justify-center min-h-[400px] max-h-[520px]">
+              <div className="w-full h-full flex flex-col gap-6 bg-[#2d0b2e] rounded-2xl shadow-lg p-8 items-center justify-center">
+                {/* Top: Stat blocks */}
+                <div className="grid grid-cols-3 gap-6 w-full">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="text-white text-lg font-semibold mb-1 flex items-center gap-2">
+                      <Icon name="cv" className="w-6 h-6" /> Total CV's
+                    </div>
+                    <div className="text-4xl font-bold text-white">
+                      {analytics?.totalCVs ?? 0}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="text-white text-lg font-semibold mb-1 flex items-center gap-2">
+                      <Icon name="cv" className="w-6 h-6" /> Last Week's CV's
+                    </div>
+                    <div className="text-4xl font-bold text-white">
+                      {analytics?.lastWeekCVs ?? 0}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="text-white text-lg font-semibold mb-1 flex items-center gap-2">
+                      <Icon name="dashboard" className="w-6 h-6" /> Avg.
+                      Sections per CV
+                    </div>
+                    <div className="text-4xl font-bold text-white">
+                      {analytics?.avgSectionsPerCV?.toFixed(2) ?? 0}
+                    </div>
+                  </div>
+                </div>
+                <Separator className="my-2 bg-white/20" />
+                {/* Middle: Main charts */}
+                <div className="grid grid-cols-3 gap-6 w-full flex-1">
+                  {/* Template Usage Pie */}
+                  <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
+                    <div className="text-white text-base font-semibold mb-2">
+                      Template Usage
+                    </div>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <PieChart>
+                        <Pie
+                          data={analytics?.templateUsage || []}
+                          dataKey="count"
+                          nameKey="templateName"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={30}
+                          outerRadius={55}
+                          fill="#f7a18e"
+                          label
+                        >
+                          {(analytics?.templateUsage || []).map(
+                            (entry: any, index: number) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={
+                                  ["#f7a18e", "#f7c28e", "#e78a7a"][index % 3]
+                                }
                               />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleDelete(cv._id)}
-                              disabled={actionLoading === cv._id + "-delete"}
-                            >
-                              {actionLoading === cv._id + "-delete" ? (
-                                <svg
-                                  className="animate-spin h-5 w-5 text-red-400"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8z"
-                                  ></path>
-                                </svg>
-                              ) : (
-                                <Icon name="x" className="w-6 h-6 text-white" />
-                              )}
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleDownload(cv._id, cv.title)}
-                              disabled={actionLoading === cv._id + "-download"}
-                            >
-                              {actionLoading === cv._id + "-download" ? (
-                                <svg
-                                  className="animate-spin h-5 w-5 text-pink-400"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8z"
-                                  ></path>
-                                </svg>
-                              ) : (
-                                <Icon
-                                  name="cv"
-                                  className="w-6 h-6 text-white"
-                                />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </Carousel>
-              )}
-            </div>
-          </div>
-
-          {/* Charts Section (1/3 width, stacked vertically) */}
-          <div className="col-span-1 h-full flex flex-col gap-4">
-            {/* Donut Chart Card */}
-            <div className="flex-1 bg-[#2d0b2e]/90 rounded-2xl p-0 flex flex-col items-center justify-center min-h-[180px]">
-              <div className="flex flex-col items-center justify-center h-full w-full py-4">
-                <div className="text-white font-semibold mb-2 text-center">
-                  Filled sections
-                </div>
-                <div className="flex flex-row items-center justify-center">
-                  <ResponsiveContainer width={120} height={120}>
-                    <PieChart>
-                      <Pie
-                        data={donutData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={60}
-                        fill="#f7a18e"
-                        label={false}
-                      >
-                        {donutData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex flex-col items-center gap-1 mt-2">
-                    {donutData.map((d) => (
-                      <div
-                        key={d.name}
-                        className="flex items-center gap-2 text-white/80 text-xs"
-                      >
-                        <span
-                          className="inline-block w-3 h-3 rounded-full"
-                          style={{ background: d.color }}
-                        ></span>
-                        {d.value}% {d.name}
-                      </div>
-                    ))}
+                            )
+                          )}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="flex gap-6 mt-4 justify-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-white text-lg font-bold">78%</span>
-                      <span className="text-white/60 text-xs">Shared</span>
+                  {/* CV Creation Trend Bar */}
+                  <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
+                    <div className="text-white text-base font-semibold mb-2">
+                      CV Creation Trend
                     </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-white text-lg font-bold">22%</span>
-                      <span className="text-white/60 text-xs">Downloaded</span>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart data={analytics?.creationTrend || []}>
+                        <XAxis dataKey="month" fontSize={10} stroke="#fff" />
+                        <YAxis
+                          allowDecimals={false}
+                          fontSize={10}
+                          stroke="#fff"
+                        />
+                        <Tooltip />
+                        <Bar
+                          dataKey="count"
+                          fill="#a259e6"
+                          radius={[8, 8, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* CVs by Section Count (new) */}
+                  <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
+                    <div className="text-white text-base font-semibold mb-2">
+                      CVs by Section Count
                     </div>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart
+                        data={
+                          analytics?.mostSectionCVs?.map((cv: any) => ({
+                            name: cv.title,
+                            sections: cv.sectionCount,
+                          })) || []
+                        }
+                      >
+                        <XAxis
+                          dataKey="name"
+                          fontSize={10}
+                          stroke="#fff"
+                          interval={0}
+                          angle={-20}
+                          height={40}
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          fontSize={10}
+                          stroke="#fff"
+                        />
+                        <Tooltip />
+                        <Bar
+                          dataKey="sections"
+                          fill="#f7c28e"
+                          radius={[8, 8, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <Separator className="my-2 bg-white/20" />
+                {/* Bottom: Skills, Languages, Projects Ratio */}
+                <div className="grid grid-cols-3 gap-6 w-full flex-1">
+                  {/* Top Skills */}
+                  <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
+                    <div className="text-white text-base font-semibold mb-2">
+                      Top Skills
+                    </div>
+                    <ResponsiveContainer width="100%" height={100}>
+                      <BarChart
+                        data={analytics?.mostCommonSkills || []}
+                        layout="vertical"
+                      >
+                        <XAxis type="number" fontSize={10} stroke="#fff" />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          fontSize={10}
+                          width={60}
+                          stroke="#fff"
+                        />
+                        <Tooltip />
+                        <Bar
+                          dataKey="count"
+                          fill="#a259e6"
+                          radius={[0, 8, 8, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Top Languages */}
+                  <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
+                    <div className="text-white text-base font-semibold mb-2">
+                      Top Languages
+                    </div>
+                    <ResponsiveContainer width="100%" height={100}>
+                      <BarChart
+                        data={analytics?.mostCommonLanguages || []}
+                        layout="vertical"
+                      >
+                        <XAxis type="number" fontSize={10} stroke="#fff" />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          fontSize={10}
+                          width={60}
+                          stroke="#fff"
+                        />
+                        <Tooltip />
+                        <Bar
+                          dataKey="count"
+                          fill="#f7c28e"
+                          radius={[0, 8, 8, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* CVs with/without Projects Pie (new) */}
+                  <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
+                    <div className="text-white text-base font-semibold mb-2">
+                      CVs With/Without Projects
+                    </div>
+                    <ResponsiveContainer width={100} height={100}>
+                      <PieChart>
+                        <Pie
+                          data={(() => {
+                            const withProjects = (
+                              analytics?.mostSectionCVs || []
+                            ).filter(
+                              (cv: any) =>
+                                cv.sectionCount && cv.sectionCount > 0
+                            ).length;
+                            const withoutProjects =
+                              (analytics?.mostSectionCVs || []).length -
+                              withProjects;
+                            return [
+                              { name: "With Projects", value: withProjects },
+                              {
+                                name: "Without Projects",
+                                value: withoutProjects,
+                              },
+                            ];
+                          })()}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={20}
+                          outerRadius={40}
+                          fill="#a259e6"
+                          label
+                        >
+                          <Cell fill="#a259e6" />
+                          <Cell fill="#f7a18e" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
             </div>
-            {/* Bar Chart Card */}
-            <div className="flex-1 bg-[#2d0b2e]/90 rounded-2xl p-0 flex flex-col items-center justify-center min-h-[180px]">
-              <div className="flex flex-col items-center justify-center h-full w-full py-4">
-                <div className="w-full flex flex-col items-center">
-                  <ResponsiveContainer width="95%" height={100}>
-                    <BarChart data={barData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#fff2" />
-                      <XAxis dataKey="name" stroke="#fff" fontSize={12} />
-                      <YAxis stroke="#fff" fontSize={12} />
-                      <Tooltip />
-                      <Bar
-                        dataKey="value"
-                        fill="#f7a18e"
-                        radius={[6, 6, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
-
-        {/* Bottom Section: 4 cards in a row, h-fit, equal height */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 justify-center">
-          {/* Scatter Chart Card */}
-          <div className="bg-[#2d0b2e]/90 rounded-2xl p-0 flex flex-col items-center justify-center min-h-[170px]">
-            <div className="flex flex-col items-center justify-center w-full py-4">
-              <ResponsiveContainer width="90%" height={140}>
-                <ScatterChart>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#fff2" />
-                  <XAxis dataKey="x" stroke="#fff" fontSize={12} />
-                  <YAxis dataKey="y" stroke="#fff" fontSize={12} />
-                  <Tooltip />
-                  <Scatter data={scatterData} fill="#e78a7a" />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          {/* Stats Card 1 */}
-          <div className="bg-[#2d0b2e]/90 rounded-2xl p-4 flex flex-col items-center justify-center">
-            <div className="text-white text-lg font-semibold mb-2">
-              Total CV's
-            </div>
-            <div className="text-4xl font-bold text-white mb-2">11</div>
-          </div>
-          {/* Stats Card 2 */}
-          <div className="bg-[#2d0b2e]/90 rounded-2xl p-4 flex flex-col items-center justify-center px-6">
-            <div className="text-white text-lg font-semibold mb-2">
-              Templates Used
-            </div>
-            <div className="text-4xl font-bold text-white mb-2">8</div>
-          </div>
-          {/* Stats Card 3 */}
-          <div className="bg-[#2d0b2e]/90 rounded-2xl p-4 flex flex-col items-center justify-center">
-            <div className="text-white text-lg font-semibold mb-2">
-              Profile Completion
-            </div>
-            <div className="text-4xl font-bold text-white mb-2">85%</div>
-          </div>
-        </div>
+        {/* Error Dialog */}
+        <Dialog open={!!errorDialog} onOpenChange={() => setErrorDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Error</DialogTitle>
+              <DialogDescription>{errorDialog}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Close</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      {/* Error Dialog */}
-      <Dialog open={!!errorDialog} onOpenChange={() => setErrorDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Error</DialogTitle>
-            <DialogDescription>{errorDialog}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </>
   );
 }

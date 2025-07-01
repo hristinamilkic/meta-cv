@@ -113,9 +113,15 @@ export default function UserProfile() {
           </DropdownMenuLinkItem>
           <DropdownMenuSeparator />
 
-          <DropdownMenuLinkItem href={user.isAdmin ? "/admin" : "/dashboard"}>
+          {user.isAdmin && (
+            <DropdownMenuLinkItem href="/admin">
+              <Icon name="admin" className="mr-2" />
+              Admin Panel
+            </DropdownMenuLinkItem>
+          )}
+          <DropdownMenuLinkItem href="/dashboard">
             <Icon name="dashboard" className="mr-2" />
-            {user.isAdmin ? "Admin Panel" : "Dashboard"}
+            Dashboard
           </DropdownMenuLinkItem>
 
           <DropdownMenuLinkItem onClick={openProfileDialog}>

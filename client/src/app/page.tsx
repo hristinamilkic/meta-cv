@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-
+import Link from "next/link";
 export default function Home() {
   return (
     <main className="relative z-10 flex flex-col md:flex-row items-center justify-center px-2 sm:px-4 gap-8 sm:gap-12 md:gap-20 lg:gap-28 w-full min-h-screen py-8 md:py-0 min-w-0">
@@ -12,9 +11,14 @@ export default function Home() {
           and efficient. Transform your career prospects with our user-friendly
           tools and templates.
         </p>
-        <Button className="bg-[hsl(var(--mc-warm))] text-white text-xs sm:text-md lg:text-lg px-4 sm:px-6 py-3 sm:py-6 rounded-2xl shadow-xl hover:bg-[hsl(var(--mc-warm))] transition font-medium w-full sm:w-auto">
+
+        <Link
+          href="/templates"
+          className="bg-[hsl(var(--mc-warm))] text-white text-xs sm:text-md lg:text-lg px-4 sm:px-6 py-3 sm:py-3 rounded-2xl shadow-xl hover:bg-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-primary))] transition duration-200  font-medium w-full sm:w-auto"
+        >
+          {" "}
           BUILD YOUR CV
-        </Button>
+        </Link>
       </div>
 
       <div className="relative flex justify-center items-center w-full max-w-xs sm:max-w-md md:max-w-lg min-w-0">

@@ -18,7 +18,13 @@ export type ValidIconName =
   | "logout"
   | "clock"
   | "arrow-left"
-  | "arrow-right";
+  | "arrow-right"
+  | "spin"
+  | "download"
+  | "done"
+  | "edit"
+  | "admin"
+  | "loading";
 
 export function Icon(props: { name: ValidIconName; className: string }) {
   switch (props.name) {
@@ -316,6 +322,91 @@ export function Icon(props: { name: ValidIconName; className: string }) {
             strokeWidth="1.5"
             d="m10 17l5-5l-5-5"
           />
+        </svg>
+      );
+    case "download":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={props.className}
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="currentColor"
+            d="M12 15.575q-.2 0-.375-.062T11.3 15.3l-3.6-3.6q-.3-.3-.288-.7t.288-.7q.3-.3.713-.312t.712.287L11 12.15V5q0-.425.288-.712T12 4t.713.288T13 5v7.15l1.875-1.875q.3-.3.713-.288t.712.313q.275.3.288.7t-.288.7l-3.6 3.6q-.15.15-.325.213t-.375.062M6 20q-.825 0-1.412-.587T4 18v-2q0-.425.288-.712T5 15t.713.288T6 16v2h12v-2q0-.425.288-.712T19 15t.713.288T20 16v2q0 .825-.587 1.413T18 20z"
+          />
+        </svg>
+      );
+    case "done":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={props.className}
+          viewBox="0 0 24 24"
+        >
+          <g
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+          >
+            <path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1" />
+            <path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3zM16 5l3 3" />
+          </g>
+        </svg>
+      );
+    case "edit":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={props.className}
+          viewBox="0 0 24 24"
+        >
+          <g strokeLinecap="round" strokeLinejoin="round" strokeWidth="1">
+            <path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1" />
+            <path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3zM16 5l3 3" />
+          </g>
+        </svg>
+      );
+    case "admin":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={props.className}
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+            d="M11.998 2C8.99 2 7.04 4.019 4.734 4.755c-.938.3-1.407.449-1.597.66c-.19.21-.245.519-.356 1.135c-1.19 6.596 1.41 12.694 7.61 15.068c.665.255.998.382 1.61.382s.946-.128 1.612-.383c6.199-2.373 8.796-8.471 7.606-15.067c-.111-.616-.167-.925-.357-1.136s-.658-.36-1.596-.659C16.959 4.019 15.006 2 11.998 2M12 2v20m9-10H3"
+            color="currentColor"
+          />
+        </svg>
+      );
+    case "loading":
+      return (
+        <svg
+          className="animate-spin h-5 w-5 text-pink-400"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8z"
+          ></path>
         </svg>
       );
     default:

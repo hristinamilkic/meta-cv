@@ -92,7 +92,7 @@ export default function CVBuilderPage() {
   const [template, setTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [renderKey, setRenderKey] = useState(0); // For forcing iframe re-render
+  const [renderKey, setRenderKey] = useState(0); 
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
@@ -275,9 +275,7 @@ export default function CVBuilderPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
+      <div className="animate-spin border-pink-500 min-h-screen flex items-center justify-center"></div>
     );
   return (
     <div className="flex items-center justify-center mt-24">

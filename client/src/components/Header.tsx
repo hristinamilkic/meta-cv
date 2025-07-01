@@ -5,6 +5,7 @@ import UserProfile from "@/components/UserProfile";
 import { useState, useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import authService from "@/services/auth.service";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function decodeJwtPayload(token: string): any {
   try {
@@ -22,7 +23,13 @@ function decodeJwtPayload(token: string): any {
   }
 }
 
-export default function Header() {
+export default function Header({
+  selectedTab,
+  onTabChange,
+}: {
+  selectedTab?: "cvs" | "analytics";
+  onTabChange?: (tab: "cvs" | "analytics") => void;
+}) {
   const pathname = usePathname();
   const [search, setSearch] = useState("");
   const [elapsed, setElapsed] = useState("0m 0s");
@@ -93,30 +100,45 @@ export default function Header() {
     <header className="absolute top-0 left-0 z-50 w-full bg-transparent shadow-none border-none flex flex-wrap justify-between items-center px-2 sm:px-8 py-2 sm:py-4 gap-y-2">
       {pathname === "/dashboard" ? (
         <>
-          {/* Dashboard: Search left, profile center, time tracker right */}
-          <div className="flex-1 flex items-center">
+          <div className="flex-1 flex items-center gap-10">
             <span className="hidden sm:block text-[hsl(var(--mc-background))] font-normal text-2xl sm:text-3xl tracking-wide mr-6">
               Dashboard
             </span>
-            <div className="flex items-center bg-transparent border border-[hsl(var(--mc-background))] rounded-full px-4 py-1 w-full max-w-xs">
-              <Icon
-                name="search"
-                className="w-5 h-5 text-[hsl(var(--mc-background))] mr-2"
-              />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search here"
-                className="bg-transparent outline-none border-none w-full text-[hsl(var(--mc-background))] placeholder-[hsl(var(--mc-background))]"
-              />
-            </div>
+            <Tabs
+              value={selectedTab}
+              onValueChange={(value) =>
+                onTabChange?.(value as "cvs" | "analytics")
+              }
+              className="bg-transparent"
+            >
+              <TabsList className="bg-transparent py-6 gap-0 flex items-center border border-[hsl(var(--mc-background))] rounded-full">
+                <TabsTrigger
+                  value="cvs"
+                  className={`rounded-full px-4 py-2 mx-0 group`}
+                >
+                  <Icon
+                    name="cv"
+                    className={`w-6 h-6 transition-colors duration-200 ${selectedTab === "cvs" ? "text-[hsl(var(--mc-secondary))]" : "text-[hsl(var(--mc-background))]"}`}
+                  />
+                </TabsTrigger>
+                <div className="w-px h-6 bg-[hsl(var(--mc-background))] mx-2" />
+                <TabsTrigger
+                  value="analytics"
+                  className={`rounded-full px-4 py-2 mx-0 group`}
+                >
+                  <Icon
+                    name="dashboard"
+                    className={`w-6 h-6 transition-colors duration-200 ${selectedTab === "analytics" ? "text-[hsl(var(--mc-secondary))]" : "text-[hsl(var(--mc-background))]"}`}
+                  />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           <div className="flex-1 flex justify-center">
             <UserProfile />
           </div>
           <div className="flex-1 flex flex-row gap-2 items-end">
-            <div className="text-[hsl(var(--mc-background))] border border-white/80 rounded-full px-4 py-1 font-normal text-base sm:text-lg flex items-center gap-2">
+            <div className="text-[hsl(var(--mc-background))] border border-white/80 rounded-full px-2 py-1 font-normal text-base sm:text-lg flex items-center gap-2">
               <span>Time tracker:</span>
               <span>{elapsed}</span>
               <Icon name="clock" className="w-5 h-5" />
