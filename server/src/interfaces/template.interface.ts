@@ -1,4 +1,11 @@
 import { Document } from "mongoose";
+import { IPersonalDetails } from "./cv.interface";
+import { IEducation } from "./cv.interface";
+import { IExperience } from "./cv.interface";
+import { ISkill } from "./cv.interface";
+import { ILanguage } from "./cv.interface";
+import { IProject } from "./cv.interface";
+import { ICertification } from "./cv.interface";
 
 export interface SectionLayout {
   position: "left" | "right" | "full";
