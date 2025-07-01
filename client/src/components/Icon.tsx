@@ -24,7 +24,8 @@ export type ValidIconName =
   | "done"
   | "edit"
   | "admin"
-  | "loading";
+  | "loading"
+  | "delete";
 
 export function Icon(props: { name: ValidIconName; className: string }) {
   switch (props.name) {
@@ -344,15 +345,10 @@ export function Icon(props: { name: ValidIconName; className: string }) {
           className={props.className}
           viewBox="0 0 24 24"
         >
-          <g
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1"
-          >
-            <path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1" />
-            <path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3zM16 5l3 3" />
-          </g>
+          <path
+            fill="currentColor"
+            d="m6.7 18l-5.65-5.65l1.425-1.4l4.25 4.25l1.4 1.4zm5.65 0L6.7 12.35l1.4-1.425l4.25 4.25l9.2-9.2l1.4 1.425zm0-5.65l-1.425-1.4L15.875 6L17.3 7.4z"
+          />
         </svg>
       );
     case "edit":
@@ -362,9 +358,12 @@ export function Icon(props: { name: ValidIconName; className: string }) {
           className={props.className}
           viewBox="0 0 24 24"
         >
-          <g strokeLinecap="round" strokeLinejoin="round" strokeWidth="1">
-            <path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1" />
-            <path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3zM16 5l3 3" />
+          <g fill="none">
+            <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+            <path
+              fill="currentColor"
+              d="M13 3a1 1 0 0 1 .117 1.993L13 5H5v14h14v-8a1 1 0 0 1 1.993-.117L21 11v8a2 2 0 0 1-1.85 1.995L19 21H5a2 2 0 0 1-1.995-1.85L3 19V5a2 2 0 0 1 1.85-1.995L5 3zm6.243.343a1 1 0 0 1 1.497 1.32l-.083.095l-9.9 9.899a1 1 0 0 1-1.497-1.32l.083-.094z"
+            />
           </g>
         </svg>
       );
@@ -389,7 +388,7 @@ export function Icon(props: { name: ValidIconName; className: string }) {
     case "loading":
       return (
         <svg
-          className="animate-spin h-5 w-5 text-pink-400"
+          className={"animate-spin text-pink-400 " + props.className}
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -407,6 +406,19 @@ export function Icon(props: { name: ValidIconName; className: string }) {
             fill="currentColor"
             d="M4 12a8 8 0 018-8v8z"
           ></path>
+        </svg>
+      );
+    case "delete":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={props.className}
+          viewBox="0 0 32 32"
+        >
+          <path
+            fill="currentColor"
+            d="M13.5 6.5V7h5v-.5a2.5 2.5 0 0 0-5 0m-2 .5v-.5a4.5 4.5 0 1 1 9 0V7H28a1 1 0 1 1 0 2h-1.508L24.6 25.568A5 5 0 0 1 19.63 30h-7.26a5 5 0 0 1-4.97-4.432L5.508 9H4a1 1 0 0 1 0-2zM9.388 25.34a3 3 0 0 0 2.98 2.66h7.263a3 3 0 0 0 2.98-2.66L24.48 9H7.521zM13 12.5a1 1 0 0 1 1 1v10a1 1 0 1 1-2 0v-10a1 1 0 0 1 1-1m7 1a1 1 0 1 0-2 0v10a1 1 0 1 0 2 0z"
+          />
         </svg>
       );
     default:

@@ -234,7 +234,7 @@ export const AddTemplateForm = ({
           value={formState.name || ""}
           onChange={handleFormChange}
           placeholder="Enter template name"
-          variant="light"
+          variant="dark"
           required
         />
       </div>
@@ -246,7 +246,7 @@ export const AddTemplateForm = ({
           value={formState.description || ""}
           onChange={handleFormChange}
           placeholder="Enter template description"
-          variant="light"
+          variant="dark"
           required
         />
       </div>
@@ -325,7 +325,7 @@ export const PasswordUpdateForm = ({
           onChange={handleFormChange}
           placeholder="Enter new password"
           type="password"
-          variant="light"
+          variant="dark"
         />
       </div>
     </form>

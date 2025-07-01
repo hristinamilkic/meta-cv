@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
     }
     try {
       const result = await verifyResetCode(formData.code);
-      if (result === true) {
+      if (result && result.valid) {
         setOtpStep(false);
       } else {
         setErrors({ code: "Invalid or expired code." });

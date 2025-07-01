@@ -133,6 +133,7 @@ const CVSchema = new Schema(
       linkedin: String,
       github: String,
       summary: String,
+      profileImage: String,
     },
     education: [EducationSchema],
     experience: [ExperienceSchema],

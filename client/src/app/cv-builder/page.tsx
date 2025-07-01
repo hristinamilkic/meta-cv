@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 import api from "@/services/api";
 import { ICV } from "@/interfaces/cv.interface";
 import Handlebars from "handlebars";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronDownIcon } from "lucide-react";
 
 type CVFormData = Omit<
   ICV,
@@ -57,7 +67,6 @@ const initialCVData: CVFormData = {
 function stylesToCssVars(styles: Template["styles"]) {
   const cssVars = [];
 
-  // Convert camelCase to kebab-case and create CSS variables
   if (styles.primaryColor)
     cssVars.push(`--primary-color: ${styles.primaryColor};`);
   if (styles.secondaryColor)
@@ -71,7 +80,6 @@ function stylesToCssVars(styles: Template["styles"]) {
     cssVars.push(`--border-radius: ${styles.borderRadius};`);
   if (styles.boxShadow) cssVars.push(`--box-shadow: ${styles.boxShadow};`);
 
-  // Add custom styles if they exist
   if (styles.customStyles) {
     Object.entries(styles.customStyles).forEach(([key, value]) => {
       const cssVarName = `--${key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}`;
@@ -87,12 +95,131 @@ function renderTemplateHtml(html: string, data: any) {
   return template(data);
 }
 
+function formatDate(date: Date | string | undefined) {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatRange(range: { from?: Date | string; to?: Date | string }) {
+  if (!range.from && !range.to) return "Select date range";
+  if (range.from && range.to)
+    return `${formatDate(range.from)} - ${formatDate(range.to)}`;
+  if (range.from) return `${formatDate(range.from)} - ...`;
+  if (range.to) return `... - ${formatDate(range.to)}`;
+  return "Select date range";
+}
+
+function DatePicker({
+  value,
+  onChange,
+  mode = "single",
+  placeholder = "Pick a date",
+  ...props
+}: {
+  value: Date | { from?: Date; to?: Date } | undefined;
+  onChange: (date: any) => void;
+  mode?: "single" | "range";
+  placeholder?: string;
+  [key: string]: any;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button className="w-full justify-between font-normal bg-transparent border border-[hsl(var(--mc-warm))] text-white">
+          {mode === "single"
+            ? value && value instanceof Date
+              ? formatDate(value)
+              : value && typeof value === "string"
+                ? formatDate(new Date(value))
+                : placeholder
+            : isRangeObject(value)
+              ? formatRange(value)
+              : placeholder}
+          <ChevronDownIcon className="ml-2 h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+        {mode === "range" ? (
+          <Calendar
+            mode={mode}
+            selected={
+              isRangeObject(value) ? value : { from: undefined, to: undefined }
+            }
+            onSelect={(date: any) => {
+              onChange(date);
+              if (date?.to) setOpen(false);
+            }}
+            captionLayout="dropdown"
+            initialFocus
+            required={false}
+            {...props}
+          />
+        ) : (
+          <Calendar
+            mode={mode}
+            selected={value instanceof Date ? value : undefined}
+            onSelect={(date: any) => {
+              onChange(date);
+              setOpen(false);
+            }}
+            captionLayout="dropdown"
+            initialFocus
+            {...props}
+          />
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Helper type guard
+function isRangeObject(
+  val: any
+): val is { from: Date | undefined; to: Date | undefined } {
+  return val && typeof val === "object" && ("from" in val || "to" in val);
+}
+
+// Helper to deeply parse date fields in CV data
+function parseDatesInCVData(data: any): any {
+  if (!data) return data;
+  const parseDate = (d: any) => {
+    if (!d) return d;
+    if (typeof d === "string" && !isNaN(Date.parse(d))) return new Date(d);
+    return d;
+  };
+  const clone = JSON.parse(JSON.stringify(data));
+  ["experience", "education", "projects"].forEach((section) => {
+    if (Array.isArray(clone[section])) {
+      clone[section] = clone[section].map((item: any) => ({
+        ...item,
+        startDate: item.startDate ? parseDate(item.startDate) : undefined,
+        endDate: item.endDate ? parseDate(item.endDate) : undefined,
+      }));
+    }
+  });
+  if (Array.isArray(clone.certifications)) {
+    clone.certifications = clone.certifications.map((item: any) => ({
+      ...item,
+      date: parseDate(item.date),
+      expiryDate: parseDate(item.expiryDate),
+    }));
+  }
+  return clone;
+}
+
 export default function CVBuilderPage() {
   const [cvData, setCvData] = useState<CVFormData>(initialCVData);
   const [template, setTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [renderKey, setRenderKey] = useState(0); 
+  const [renderKey, setRenderKey] = useState(0);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
@@ -140,7 +267,7 @@ export default function CVBuilderPage() {
           setTemplate(templateData);
           // Set cvData to template.defaultData if present
           if (templateData.defaultData) {
-            setCvData(templateData.defaultData);
+            setCvData(parseDatesInCVData(templateData.defaultData));
           } else {
             setCvData(initialCVData);
           }
@@ -165,7 +292,9 @@ export default function CVBuilderPage() {
   }, [cvData]);
 
   const handleDynamicChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e:
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      | { target: { name: string; value: any } },
     section: keyof CVFormData,
     index?: number
   ) => {
@@ -173,7 +302,16 @@ export default function CVBuilderPage() {
     setCvData((prev) => {
       const newData = JSON.parse(JSON.stringify(prev)); // Deep copy
       if (index !== undefined && Array.isArray(newData[section])) {
-        (newData[section] as any[])[index][name] = value;
+        if (isRangeObject(value)) {
+          // Always merge with previous value to preserve both from/to
+          const prevRange = (newData[section] as any[])[index][name] || {};
+          (newData[section] as any[])[index][name] = {
+            from: value.from !== undefined ? value.from : prevRange.from,
+            to: value.to !== undefined ? value.to : prevRange.to,
+          };
+        } else {
+          (newData[section] as any[])[index][name] = value;
+        }
       } else if (section === "personalDetails") {
         (newData[section] as any)[name] = value;
       } else {
@@ -181,17 +319,26 @@ export default function CVBuilderPage() {
       }
       return newData;
     });
-    // Force iframe re-render for real-time preview
     setRenderKey((prev) => prev + 1);
   };
 
   const addSectionItem = (section: keyof CVFormData) => {
     const newItem: any = {
-      experience: { company: "", position: "" },
-      education: { institution: "", degree: "" },
+      experience: {
+        company: "",
+        position: "",
+        startDate: undefined,
+        endDate: undefined,
+      },
+      education: {
+        institution: "",
+        degree: "",
+        startDate: undefined,
+        endDate: undefined,
+      },
       skills: { name: "", level: "Intermediate" },
       languages: { name: "", proficiency: "Conversational" },
-      projects: { name: "" },
+      projects: { name: "", startDate: undefined, endDate: undefined },
       certifications: { name: "", issuer: "" },
     }[section as string];
     if (newItem) {
@@ -220,12 +367,66 @@ export default function CVBuilderPage() {
         setProfilePhoto(reader.result as string);
         setCvData((prev) => ({
           ...prev,
-          profilePhoto: reader.result as string,
+          personalDetails: {
+            ...prev.personalDetails,
+            profileImage: reader.result as string,
+          },
         }));
         setRenderKey((prev) => prev + 1);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const formatCVDataForPreview = (cvData: CVFormData) => {
+    const clone = JSON.parse(JSON.stringify(cvData));
+    const formatSection = (
+      arr: any[],
+      startField: string,
+      endField: string,
+      joinLabel: string
+    ) =>
+      arr.map((item) => {
+        const newItem = { ...item };
+        // Format startDate and endDate as readable strings
+        if (newItem[startField])
+          newItem[startField] = formatDate(newItem[startField]);
+        if (newItem[endField])
+          newItem[endField] = formatDate(newItem[endField]);
+        if (newItem[startField] || newItem[endField]) {
+          newItem[`${startField}To${endField}`] =
+            `${newItem[startField] || ""} - ${newItem[endField] || ""}`;
+        }
+        return newItem;
+      });
+    if (clone.experience)
+      clone.experience = formatSection(
+        clone.experience,
+        "startDate",
+        "endDate",
+        "Experience Dates"
+      );
+    if (clone.education)
+      clone.education = formatSection(
+        clone.education,
+        "startDate",
+        "endDate",
+        "Education Dates"
+      );
+    if (clone.projects)
+      clone.projects = formatSection(
+        clone.projects,
+        "startDate",
+        "endDate",
+        "Project Dates"
+      );
+    if (clone.certifications)
+      clone.certifications = clone.certifications.map((item: any) => ({
+        ...item,
+        date: formatDate(item.date),
+        expiryDate: formatDate(item.expiryDate),
+      }));
+    return clone;
   };
 
   const generatePreviewHtml = useCallback(() => {
@@ -238,11 +439,10 @@ export default function CVBuilderPage() {
     const cssVars = styles ? `:root {${stylesToCssVars(styles)}}` : "";
     const css = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap');\nbody, * { font-family: 'Montserrat', Arial, sans-serif !important; }\n${cssVars}\n${templateData.css}`;
     const html = renderTemplateHtml(templateData.html, {
-      ...cvData,
-      profilePhoto,
+      ...formatCVDataForPreview(cvData),
     });
     return `<html><head><style>${css}</style></head><body>${html}</body></html>`;
-  }, [template, cvData, profilePhoto]);
+  }, [template, cvData]);
 
   const handleFinishBuild = async () => {
     const payload = {
@@ -287,95 +487,112 @@ export default function CVBuilderPage() {
               <h2 className="text-3xl font-bold text-center text-white mb-2">
                 Edit your personal details
               </h2>
-              <p className="text-center text-[#c7a0e7] mb-8">
+              <p className="text-center text-white mb-8">
                 Here you can edit your personal details.
               </p>
               <form
                 className="space-y-8 overflow-y-auto custom-scrollbar flex-1 p-2"
                 onSubmit={(e) => e.preventDefault()}
               >
+                {/* CV Name Field */}
+                <div className="mb-4">
+                  <Label htmlFor="cvTitle" className="mb-2">
+                    CV Name
+                  </Label>
+                  <Input
+                    id="cvTitle"
+                    name="title"
+                    placeholder="CV Name"
+                    value={cvData.title || ""}
+                    onChange={(e) =>
+                      setCvData((prev) => ({ ...prev, title: e.target.value }))
+                    }
+                    className="w-full"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-[#c7a0e7] mb-2">
+                    <Label htmlFor="fullName" className="mb-2">
                       Full name
-                    </label>
-                    <input
-                      type="text"
+                    </Label>
+                    <Input
+                      id="fullName"
                       name="fullName"
                       placeholder="Full name"
                       value={cvData.personalDetails.fullName || ""}
                       onChange={(e) =>
                         handleDynamicChange(e, "personalDetails")
                       }
-                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[#c7a0e7] mb-2">Phone</label>
-                    <input
-                      type="text"
+                    <Label htmlFor="phone" className="mb-2">
+                      Phone
+                    </Label>
+                    <Input
+                      id="phone"
                       name="phone"
                       placeholder="Phone"
                       value={cvData.personalDetails.phone || ""}
                       onChange={(e) =>
                         handleDynamicChange(e, "personalDetails")
                       }
-                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[#c7a0e7] mb-2">
+                    <Label htmlFor="location" className="mb-2">
                       Location
-                    </label>
-                    <input
-                      type="text"
+                    </Label>
+                    <Input
+                      id="location"
                       name="location"
                       placeholder="Location"
                       value={cvData.personalDetails.location || ""}
                       onChange={(e) =>
                         handleDynamicChange(e, "personalDetails")
                       }
-                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[#c7a0e7] mb-2">
+                    <Label htmlFor="email" className="mb-2">
                       Email address
-                    </label>
-                    <input
-                      type="text"
+                    </Label>
+                    <Input
+                      id="email"
                       name="email"
                       placeholder="Email address"
                       value={cvData.personalDetails.email || ""}
                       onChange={(e) =>
                         handleDynamicChange(e, "personalDetails")
                       }
-                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[#c7a0e7] mb-2">Website</label>
-                    <input
-                      type="text"
+                    <Label htmlFor="website" className="mb-2">
+                      Website
+                    </Label>
+                    <Input
+                      id="website"
                       name="website"
                       placeholder="Website"
                       value={cvData.personalDetails.website || ""}
                       onChange={(e) =>
                         handleDynamicChange(e, "personalDetails")
                       }
-                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[#c7a0e7] mb-2">Summary</label>
-                    <textarea
+                    <Label htmlFor="summary" className="mb-2">
+                      Summary
+                    </Label>
+                    <Textarea
+                      id="summary"
                       name="summary"
                       placeholder="Summary"
                       value={cvData.personalDetails.summary || ""}
                       onChange={(e) =>
                         handleDynamicChange(e, "personalDetails")
                       }
-                      className="w-full rounded-xl bg-[#2d033b] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7] resize-none"
                       rows={3}
                     />
                   </div>
@@ -403,80 +620,84 @@ export default function CVBuilderPage() {
                   />
                 </div>
 
-                {/* Restore all original sections below, styled to match */}
                 {[
                   {
                     label: "Experience",
                     section: "experience",
                     fields: [
-                      "company",
-                      "position",
-                      "startDate",
-                      "endDate",
-                      "description",
-                      "location",
-                      "highlights",
+                      { name: "company", type: "text" },
+                      { name: "position", type: "text" },
+                      { name: "startDate", type: "single" },
+                      { name: "endDate", type: "single" },
+                      { name: "location", type: "text" },
+                      { name: "description", type: "textarea" },
+                      { name: "highlights", type: "textarea" },
                     ],
                   },
                   {
                     label: "Education",
                     section: "education",
                     fields: [
-                      "institution",
-                      "degree",
-                      "fieldOfStudy",
-                      "startDate",
-                      "endDate",
-                      "description",
-                      "location",
+                      { name: "institution", type: "text" },
+                      { name: "degree", type: "text" },
+                      { name: "fieldOfStudy", type: "text" },
+                      { name: "startDate", type: "single" },
+                      { name: "endDate", type: "single" },
+                      { name: "location", type: "text" },
+                      { name: "description", type: "textarea" },
                     ],
                   },
                   {
                     label: "Skills",
                     section: "skills",
-                    fields: ["name", "level"],
+                    fields: [
+                      { name: "name", type: "text" },
+                      { name: "level", type: "text" },
+                    ],
                   },
                   {
                     label: "Languages",
                     section: "languages",
-                    fields: ["name", "proficiency"],
+                    fields: [
+                      { name: "name", type: "text" },
+                      { name: "proficiency", type: "text" },
+                    ],
                   },
                   {
                     label: "Projects",
                     section: "projects",
                     fields: [
-                      "name",
-                      "description",
-                      "startDate",
-                      "endDate",
-                      "url",
-                      "technologies",
-                      "highlights",
+                      { name: "name", type: "text" },
+                      { name: "startDate", type: "single" },
+                      { name: "endDate", type: "single" },
+                      { name: "description", type: "textarea" },
+                      { name: "url", type: "text" },
+                      { name: "technologies", type: "text" },
+                      { name: "highlights", type: "textarea" },
                     ],
                   },
                   {
                     label: "Certifications",
                     section: "certifications",
                     fields: [
-                      "name",
-                      "issuer",
-                      "date",
-                      "expiryDate",
-                      "credentialId",
-                      "credentialUrl",
+                      { name: "name", type: "text" },
+                      { name: "issuer", type: "text" },
+                      { name: "date", type: "single" },
+                      { name: "expiryDate", type: "single" },
+                      { name: "credentialId", type: "text" },
+                      { name: "credentialUrl", type: "text" },
                     ],
                   },
                 ].map(({ label, section, fields }) => (
                   <div key={section} className="mb-8">
-                    <h2 className="text-2xl font-semibold mb-4 border-b pb-2 flex items-center justify-between text-white">
+                    <h2 className="text-2xl font-semibold mb-4 border-b border-[hsl(var(--mc-warm))] pb-2 flex items-center justify-between text-white">
                       {label}
                       <Button
                         type="button"
                         onClick={() =>
                           addSectionItem(section as keyof CVFormData)
                         }
-                        size="sm"
-                        className="bg-[#810ca8] hover:bg-[#c7a0e7] text-white font-bold rounded-xl"
+                        className="text-sm w-1/3"
                       >
                         Add
                       </Button>
@@ -485,7 +706,7 @@ export default function CVBuilderPage() {
                       (item, idx) => (
                         <div
                           key={idx}
-                          className="border border-[#810ca8] rounded-xl p-4 mb-4 relative bg-[#2d033b]"
+                          className="border border-[hsl(var(--mc-warm))] rounded-xl p-4 mb-4 relative bg-[#2d033b]"
                         >
                           <Button
                             type="button"
@@ -495,30 +716,110 @@ export default function CVBuilderPage() {
                                 idx
                               )
                             }
-                            className=" bg-[#810ca8] hover:bg-[#c7a0e7] text-white font-bold rounded-xl"
+                            className="mb-4"
                           >
                             Remove
                           </Button>
                           <div className="grid grid-cols-2 gap-4">
-                            {fields.map((field) => (
-                              <input
-                                key={field}
-                                type="text"
-                                name={field}
-                                placeholder={
-                                  field.charAt(0).toUpperCase() + field.slice(1)
-                                }
-                                value={item[field] || ""}
-                                onChange={(e) =>
-                                  handleDynamicChange(
-                                    e,
-                                    section as keyof CVFormData,
-                                    idx
-                                  )
-                                }
-                                className="w-full rounded-xl bg-[#22023a] text-white border border-[#810ca8] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#c7a0e7]"
-                              />
-                            ))}
+                            {fields.map((fieldObj) => {
+                              const field = fieldObj.name;
+                              const type = fieldObj.type;
+                              if (type === "text") {
+                                return (
+                                  <div
+                                    key={field}
+                                    className="flex flex-col gap-1"
+                                  >
+                                    <Label
+                                      htmlFor={`${section}-${field}-${idx}`}
+                                    >
+                                      {field.charAt(0).toUpperCase() +
+                                        field.slice(1)}
+                                    </Label>
+                                    <Input
+                                      id={`${section}-${field}-${idx}`}
+                                      name={field}
+                                      placeholder={
+                                        field.charAt(0).toUpperCase() +
+                                        field.slice(1)
+                                      }
+                                      value={item[field] || ""}
+                                      onChange={(e) =>
+                                        handleDynamicChange(
+                                          e,
+                                          section as keyof CVFormData,
+                                          idx
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                );
+                              }
+                              if (type === "textarea") {
+                                return (
+                                  <div
+                                    key={field}
+                                    className="col-span-2 flex flex-col gap-1"
+                                  >
+                                    <Label
+                                      htmlFor={`${section}-${field}-${idx}`}
+                                    >
+                                      {field.charAt(0).toUpperCase() +
+                                        field.slice(1)}
+                                    </Label>
+                                    <Textarea
+                                      id={`${section}-${field}-${idx}`}
+                                      name={field}
+                                      placeholder={
+                                        field.charAt(0).toUpperCase() +
+                                        field.slice(1)
+                                      }
+                                      value={item[field] || ""}
+                                      onChange={(e) =>
+                                        handleDynamicChange(
+                                          e,
+                                          section as keyof CVFormData,
+                                          idx
+                                        )
+                                      }
+                                      rows={3}
+                                      className="border border-[hsl(var(--mc-warm))]"
+                                    />
+                                  </div>
+                                );
+                              }
+                              if (type === "single") {
+                                return (
+                                  <div
+                                    key={field}
+                                    className="flex flex-col gap-1"
+                                  >
+                                    <Label
+                                      htmlFor={`${section}-${field}-${idx}`}
+                                    >
+                                      {field.charAt(0).toUpperCase() +
+                                        field.slice(1)}
+                                    </Label>
+                                    <DatePicker
+                                      mode="single"
+                                      value={item[field] || undefined}
+                                      onChange={(date) => {
+                                        const e = {
+                                          target: { name: field, value: date },
+                                        };
+                                        handleDynamicChange(
+                                          e as any,
+                                          section as keyof CVFormData,
+                                          idx
+                                        );
+                                      }}
+                                      placeholder="Select date"
+                                    />
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
                           </div>
                         </div>
                       )
@@ -529,7 +830,7 @@ export default function CVBuilderPage() {
                 <Button
                   type="button"
                   onClick={handleFinishBuild}
-                  className="w-full mt-8 bg-[#810ca8] hover:bg-[#c7a0e7] text-white font-bold py-3 rounded-xl transition-all duration-200"
+                  className="w-full mt-8 "
                 >
                   Save & Finish
                 </Button>
@@ -538,7 +839,7 @@ export default function CVBuilderPage() {
           </div>
           {/* Right: Preview */}
           <div className="w-2/3 h-full flex items-center justify-center">
-            <div className="w-full h-full overflow-y-auto bg-white rounded-3xl">
+            <div className="w-full h-full overflow-y-auto bg-transparent">
               <iframe
                 key={renderKey}
                 srcDoc={generatePreviewHtml()}

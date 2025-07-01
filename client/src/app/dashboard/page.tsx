@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ScatterChart,
   Scatter,
 } from "recharts";
@@ -41,36 +41,19 @@ import {
 import Header from "@/components/Header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-
-const donutData = [
-  { name: "Education", value: 25, color: "#f7a18e" },
-  { name: "Experience", value: 8, color: "#f7c28e" },
-  { name: "Languages", value: 12, color: "#e78a7a" },
-];
-
-const barData = [
-  { name: "Item 1", value: 8 },
-  { name: "Item 2", value: 12 },
-  { name: "Item 3", value: 18 },
-  { name: "Item 4", value: 22 },
-  { name: "Item 5", value: 15 },
-];
-
-const scatterData = [
-  { x: 5, y: 50 },
-  { x: 10, y: 100 },
-  { x: 15, y: 150 },
-  { x: 20, y: 200 },
-  { x: 25, y: 120 },
-];
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 export default function DashboardPage() {
   const [cvs, setCvs] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab1, setActiveTab1] = useState("template");
-  const [activeTab2, setActiveTab2] = useState("skills");
+
   const router = useRouter();
   const [errorDialog, setErrorDialog] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<"cvs" | "analytics">("cvs");
@@ -159,7 +142,7 @@ export default function DashboardPage() {
         selectedTab={selectedTab}
         onTabChange={(tab) => setSelectedTab(tab as "cvs" | "analytics")}
       />
-      <div className="min-h-fit w-full flex flex-col px-4 pt-28 pb-6">
+      <div className="w-full flex flex-col px-4 pt-28 pb-6 min-h-[400px] max-h-[520px]">
         <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 gap-8 bg-[#2d0b2e] rounded-3xl shadow-xl p-8">
           {selectedTab === "cvs" && (
             <div className="w-full flex flex-col justify-center min-h-[400px] max-h-[520px]">
@@ -192,96 +175,126 @@ export default function DashboardPage() {
                     </CarouselContent>
                   </Carousel>
                 ) : (
-                  <Carousel
-                    opts={{ align: "start", loop: false }}
-                    className="w-full min-h-0"
-                  >
-                    <CarouselContent>
-                      {cvs.map((cv, idx) => (
-                        <CarouselItem
-                          key={cv._id || idx}
-                          className="pl-4 md:pl-8 lg:basis-1/3 min-h-0"
-                        >
-                          <div className="flex flex-col items-center bg-pink-800/10 border border-pink-400 rounded-2xl p-7 shadow-lg min-h-0">
-                            <Image
-                              alt="CV preview"
-                              src={cv.thumbnail ? cv.thumbnail : "/cv2.jpg"}
-                              width={240}
-                              height={320}
-                              className="rounded-2xl object-cover min-w-[180px] min-h-[260px] max-w-[240px] max-h-[320px]"
-                            />
-                            <div className="text-white font-light text-lg text-center truncate max-w-[220px] mt-4 mb-2">
-                              {cv.title}
+                  <TooltipProvider>
+                    <Carousel
+                      opts={{ align: "start", loop: false }}
+                      className="w-full min-h-0"
+                    >
+                      <CarouselContent>
+                        {cvs.map((cv, idx) => (
+                          <CarouselItem
+                            key={cv._id || idx}
+                            className="pl-4 md:pl-8 lg:basis-1/3 min-h-0"
+                          >
+                            <div className="flex flex-col items-center bg-pink-800/10 border border-pink-400 rounded-2xl p-7 shadow-lg min-h-0">
+                              <Image
+                                alt="CV preview"
+                                src={cv.thumbnail ? cv.thumbnail : "/cv2.jpg"}
+                                width={240}
+                                height={320}
+                                className="rounded-2xl object-cover min-w-[180px] min-h-[260px] max-w-[240px] max-h-[320px]"
+                              />
+                              <div className="text-white font-light text-lg text-center truncate max-w-[220px] mt-4 mb-2">
+                                {cv.title}
+                              </div>
+                              <div className="flex w-fit h-full items-center justify-center gap-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      className="bg-transparent"
+                                      onClick={() => handleEdit(cv._id)}
+                                      disabled={
+                                        actionLoading === cv._id + "-edit"
+                                      }
+                                    >
+                                      {actionLoading === cv._id + "-edit" ? (
+                                        <Icon
+                                          name="loading"
+                                          className="!w-6 !h-6 text-white"
+                                        />
+                                      ) : (
+                                        <Icon
+                                          name="edit"
+                                          className="!w-6 !h-6 text-white"
+                                        />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Edit</TooltipContent>
+                                </Tooltip>
+                                <Separator
+                                  orientation="vertical"
+                                  className="h-8 bg-white/30"
+                                />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      className="bg-transparent"
+                                      onClick={() => handleDelete(cv._id)}
+                                      disabled={
+                                        actionLoading === cv._id + "-delete"
+                                      }
+                                    >
+                                      {actionLoading === cv._id + "-delete" ? (
+                                        <Icon
+                                          name="loading"
+                                          className="!w-6 !h-6 text-white"
+                                        />
+                                      ) : (
+                                        <Icon
+                                          name="delete"
+                                          className="!w-6 !h-6 text-white"
+                                        />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Delete</TooltipContent>
+                                </Tooltip>
+                                <Separator
+                                  orientation="vertical"
+                                  className="h-8 bg-white/30"
+                                />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      className="bg-transparent"
+                                      onClick={() =>
+                                        handleDownload(cv._id, cv.title)
+                                      }
+                                      disabled={
+                                        actionLoading === cv._id + "-download"
+                                      }
+                                    >
+                                      {actionLoading ===
+                                      cv._id + "-download" ? (
+                                        <Icon
+                                          name="loading"
+                                          className="!w-6 !h-6 text-white"
+                                        />
+                                      ) : (
+                                        <Icon
+                                          name="download"
+                                          className="!w-6 !h-6 text-white"
+                                        />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Download</TooltipContent>
+                                </Tooltip>
+                              </div>
                             </div>
-                            <div className="flex w-fit h-full items-center justify-center gap-5">
-                              <Button
-                                className="bg-transparent"
-                                onClick={() => handleEdit(cv._id)}
-                                disabled={actionLoading === cv._id + "-edit"}
-                              >
-                                {actionLoading === cv._id + "-edit" ? (
-                                  <Icon
-                                    name="loading"
-                                    className="w-9 h-9 text-white"
-                                  />
-                                ) : (
-                                  <Icon
-                                    name="admin"
-                                    className="w-9 h-9 text-white"
-                                  />
-                                )}
-                              </Button>
-                              <Button
-                                className="bg-transparent"
-                                onClick={() => handleDelete(cv._id)}
-                                disabled={actionLoading === cv._id + "-delete"}
-                              >
-                                {actionLoading === cv._id + "-delete" ? (
-                                  <Icon
-                                    name="loading"
-                                    className="w-9 h-9 text-white"
-                                  />
-                                ) : (
-                                  <Icon
-                                    name="x"
-                                    className="w-6 h-6 text-white"
-                                  />
-                                )}
-                              </Button>
-                              <Button
-                                className="bg-transparent"
-                                onClick={() => handleDownload(cv._id, cv.title)}
-                                disabled={
-                                  actionLoading === cv._id + "-download"
-                                }
-                              >
-                                {actionLoading === cv._id + "-download" ? (
-                                  <Icon
-                                    name="loading"
-                                    className="w-9 h-9 text-white"
-                                  />
-                                ) : (
-                                  <Icon
-                                    name="download"
-                                    className="w-9 h-9 text-white"
-                                  />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="bg-transparent text-[hsl(var(--mc-background))] border-2 border-[hsl(var(--mc-background))]" />
-                    <CarouselNext className="bg-transparent text-[hsl(var(--mc-background))] border-2 border-[hsl(var(--mc-background))]" />
-                  </Carousel>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                    </Carousel>
+                  </TooltipProvider>
                 )}
               </div>
             </div>
           )}
           {selectedTab === "analytics" && (
             <div className="w-full flex flex-col items-center justify-center min-h-[400px] max-h-[520px]">
-              <div className="w-full h-full flex flex-col gap-6 bg-[#2d0b2e] rounded-2xl shadow-lg p-8 items-center justify-center">
+              <div className="flex flex-col gap-6 w-full rounded-2xl shadow-lg p-9 items-center justify-center">
                 {/* Top: Stat blocks */}
                 <div className="grid grid-cols-3 gap-6 w-full">
                   <div className="flex flex-col items-center justify-center">
@@ -358,7 +371,7 @@ export default function DashboardPage() {
                           fontSize={10}
                           stroke="#fff"
                         />
-                        <Tooltip />
+                        <RechartsTooltip />
                         <Bar
                           dataKey="count"
                           fill="#a259e6"
@@ -394,7 +407,7 @@ export default function DashboardPage() {
                           fontSize={10}
                           stroke="#fff"
                         />
-                        <Tooltip />
+                        <RechartsTooltip />
                         <Bar
                           dataKey="sections"
                           fill="#f7c28e"
@@ -425,7 +438,7 @@ export default function DashboardPage() {
                           width={60}
                           stroke="#fff"
                         />
-                        <Tooltip />
+                        <RechartsTooltip />
                         <Bar
                           dataKey="count"
                           fill="#a259e6"
@@ -452,7 +465,7 @@ export default function DashboardPage() {
                           width={60}
                           stroke="#fff"
                         />
-                        <Tooltip />
+                        <RechartsTooltip />
                         <Bar
                           dataKey="count"
                           fill="#f7c28e"
@@ -507,7 +520,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        {/* Error Dialog */}
         <Dialog open={!!errorDialog} onOpenChange={() => setErrorDialog(null)}>
           <DialogContent>
             <DialogHeader>

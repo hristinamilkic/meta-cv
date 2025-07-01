@@ -33,6 +33,12 @@ import {
   UpdateTemplateForm,
   PasswordUpdateForm,
 } from "@/components/admin/AdminForms";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface AdminUser {
   _id: string;
@@ -80,6 +86,7 @@ interface DataTableProps<T extends { _id: string }> {
   entityType: "user" | "template" | "cv";
   user?: AdminUser;
   fetchData?: () => void;
+  userList?: AdminUser[];
 }
 
 const DataTable = <T extends { _id: string }>({
@@ -94,11 +101,13 @@ const DataTable = <T extends { _id: string }>({
   loading = false,
   user,
   fetchData,
+  userList,
 }: DataTableProps<T> & {
   entityType: "user" | "template" | "cv";
   loading?: boolean;
   user?: AdminUser;
   fetchData?: () => void;
+  userList?: AdminUser[];
 }): JSX.Element => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -236,101 +245,93 @@ const DataTable = <T extends { _id: string }>({
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 w-full text-white border border-white/10 overflow-x-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold">{title}</h2>
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          <div className="relative w-full sm:w-auto">
-            <Input
-              id="search-input"
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`bg-transparent rounded-full py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--mc-background))] transition-all duration-300 ${
-                isSearchExpanded
-                  ? "w-full sm:w-64 pl-4"
-                  : "w-0 sm:w-0 pl-0 pr-0 opacity-0 sm:opacity-100 sm:pl-10"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={handleSearchIconClick}
-              className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] transition-all duration-300 ${
-                isSearchExpanded
-                  ? "left-2.5 opacity-0 pointer-events-none"
-                  : "left-2.5"
-              }`}
-            >
-              <Icon name="search" className="w-5 h-5" />
-            </button>
-            {isSearchExpanded && (
+    <TooltipProvider>
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 w-full text-white border border-white/10 overflow-x-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <h2 className="text-2xl font-bold">{title}</h2>
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="relative w-full sm:w-auto">
+              <Input
+                id="search-input"
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`bg-transparent rounded-full py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--mc-background))] transition-all duration-300 ${
+                  isSearchExpanded
+                    ? "w-full sm:w-64 pl-4"
+                    : "w-0 sm:w-0 pl-0 pr-0 opacity-0 sm:opacity-100 sm:pl-10"
+                }`}
+              />
               <button
                 type="button"
-                onClick={() => {
-                  setIsSearchExpanded(false);
-                  setSearchTerm("");
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] transition-colors"
+                onClick={handleSearchIconClick}
+                className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] transition-all duration-300 ${
+                  isSearchExpanded
+                    ? "left-2.5 opacity-0 pointer-events-none"
+                    : "left-2.5"
+                }`}
               >
-                <Icon name="x" className="w-5 h-5" />
+                <Icon name="search" className="w-5 h-5" />
               </button>
+              {isSearchExpanded && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchExpanded(false);
+                    setSearchTerm("");
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-accent))] transition-colors"
+                >
+                  <Icon name="x" className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            {entityType === "cv" ? null : title === "TEMPLATES" ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button disabled variant="destructive">
+                        Add
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Coming soon</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button
+                onClick={() => {
+                  setFormState({});
+                  setDialogType("add");
+                  setDialogOpen(true);
+                }}
+                variant="destructive"
+                disabled={title === "ADMINS" && user && !user.isRoot}
+              >
+                Add
+              </Button>
             )}
           </div>
-          {entityType === "cv" ? null : (
-            <Button
-              onClick={() => {
-                setFormState({});
-                setDialogType("add");
-                setDialogOpen(true);
-              }}
-              variant="destructive"
-              disabled={title === "ADMINS" && user && !user.isRoot}
-            >
-              Add
-            </Button>
-          )}
         </div>
-      </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {dialogType === "update"
-                ? `UPDATE ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`
-                : dialogType === "delete"
-                  ? `DELETE ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`
-                  : `ADD ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`}
-            </DialogTitle>
-          </DialogHeader>
-          {dialogType === "update" &&
-          selectedEntity &&
-          title === "ADMINS" &&
-          user &&
-          user.isRoot ? (
-            <UpdateUserForm
-              formState={formState}
-              setFormState={setFormState}
-              handleFormChange={handleFormChange}
-              user={user}
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleUpdate();
-              }}
-            />
-          ) : dialogType === "update" && selectedEntity ? (
-            entityType === "template" ? (
-              <UpdateTemplateForm
-                formState={formState}
-                setFormState={setFormState}
-                handleFormChange={handleFormChange}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleUpdate();
-                }}
-              />
-            ) : (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {dialogType === "update"
+                  ? `UPDATE ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`
+                  : dialogType === "delete"
+                    ? `DELETE ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`
+                    : `ADD ${entityType.charAt(0).toUpperCase() + entityType.slice(1).toUpperCase()}`}
+              </DialogTitle>
+            </DialogHeader>
+            {dialogType === "update" &&
+            selectedEntity &&
+            title === "ADMINS" &&
+            user &&
+            user.isRoot ? (
               <UpdateUserForm
                 formState={formState}
                 setFormState={setFormState}
@@ -341,259 +342,295 @@ const DataTable = <T extends { _id: string }>({
                   handleUpdate();
                 }}
               />
-            )
-          ) : dialogType === "add" ? (
-            entityType === "template" ? (
-              <AddTemplateForm
-                formState={formState}
-                setFormState={setFormState}
-                handleFormChange={handleFormChange}
-                addError={addError}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAdd();
-                }}
-              />
-            ) : (
-              <AddUserForm
-                formState={formState}
-                setFormState={setFormState}
-                handleFormChange={handleFormChange}
-                title={title}
-                addError={addError}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAdd();
-                }}
-              />
-            )
-          ) : null}
-          {dialogType === "delete" && (
-            <div className="text-center py-4">
-              Are you sure you want to delete this {entityType}?
-            </div>
-          )}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogClose>
-            {dialogType === "update" && (
-              <Button type="button" onClick={handleUpdate}>
-                Save
-              </Button>
-            )}
+            ) : dialogType === "update" && selectedEntity ? (
+              entityType === "template" ? (
+                <UpdateTemplateForm
+                  formState={formState}
+                  setFormState={setFormState}
+                  handleFormChange={handleFormChange}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleUpdate();
+                  }}
+                />
+              ) : (
+                <UpdateUserForm
+                  formState={formState}
+                  setFormState={setFormState}
+                  handleFormChange={handleFormChange}
+                  user={user}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleUpdate();
+                  }}
+                />
+              )
+            ) : dialogType === "add" ? (
+              entityType === "template" ? (
+                <AddTemplateForm
+                  formState={formState}
+                  setFormState={setFormState}
+                  handleFormChange={handleFormChange}
+                  addError={addError}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAdd();
+                  }}
+                />
+              ) : (
+                <AddUserForm
+                  formState={formState}
+                  setFormState={setFormState}
+                  handleFormChange={handleFormChange}
+                  title={title}
+                  addError={addError}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAdd();
+                  }}
+                />
+              )
+            ) : null}
             {dialogType === "delete" && (
-              <Button
-                type="button"
-                onClick={handleDelete}
-                variant="destructive"
-              >
-                Delete
-              </Button>
+              <div className="text-center py-4">
+                Are you sure you want to delete this {entityType}?
+              </div>
             )}
-            {dialogType === "add" && (
-              <Button type="button" onClick={handleAdd}>
-                Save
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <div className="overflow-x-auto w-full">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-black/20">
-              {columns.map((col) => (
-                <th
-                  key={String(col.accessor)}
-                  className="p-3 first:rounded-l-lg last:rounded-r-lg"
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              {dialogType === "update" && (
+                <Button type="button" onClick={handleUpdate}>
+                  Save
+                </Button>
+              )}
+              {dialogType === "delete" && (
+                <Button
+                  type="button"
+                  onClick={handleDelete}
+                  variant="destructive"
                 >
-                  {col.Header}
-                </th>
-              ))}
-              <th className="p-3 last:rounded-r-lg">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading
-              ? Array.from({ length: 4 }).map((_, rowIdx) => (
-                  <tr key={rowIdx} className="border-b border-white/10">
-                    {columns.map((col, colIdx) => (
-                      <td key={colIdx} className="p-3">
-                        <Skeleton className="h-5 w-full" />
-                      </td>
-                    ))}
-                    <td className="p-3 flex gap-2">
-                      <Skeleton className="h-8 w-16 rounded" />
-                      <Skeleton className="h-8 w-16 rounded" />
-                    </td>
-                  </tr>
-                ))
-              : paginatedData.map((item: T) => (
-                  <tr
-                    key={(item as any)._id}
-                    className="border-b border-white/10"
+                  Delete
+                </Button>
+              )}
+              {dialogType === "add" && (
+                <Button type="button" onClick={handleAdd}>
+                  Save
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-black/20">
+                {columns.map((col) => (
+                  <th
+                    key={String(col.accessor)}
+                    className="p-3 first:rounded-l-lg last:rounded-r-lg"
                   >
-                    {columns.map((col) => (
-                      <td key={String(col.accessor)} className="p-3">
-                        {col.accessor === "isPremium" ? (
-                          <div className="flex items-center justify-center w-full h-full">
-                            {item[col.accessor] ? (
-                              <Icon
-                                name="success"
-                                className="w-5 h-5 text-green-400"
-                              />
-                            ) : (
-                              <Icon name="x" className="w-5 h-5 text-red-300" />
-                            )}
-                          </div>
-                        ) : col.accessor === "isRoot" ? (
-                          <div className="flex items-center justify-center w-full h-full">
-                            {item[col.accessor] ? (
-                              <Icon
-                                name="success"
-                                className="w-5 h-5 text-green-400"
-                              />
-                            ) : (
-                              <Icon name="x" className="w-5 h-5 text-red-300" />
-                            )}
-                          </div>
-                        ) : (
-                          <span>{String(item[col.accessor])}</span>
-                        )}
+                    {col.Header}
+                  </th>
+                ))}
+                <th className="p-3 last:rounded-r-lg">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading
+                ? Array.from({ length: 4 }).map((_, rowIdx) => (
+                    <tr key={rowIdx} className="border-b border-white/10">
+                      {columns.map((col, colIdx) => (
+                        <td key={colIdx} className="p-3">
+                          <Skeleton className="h-5 w-full" />
+                        </td>
+                      ))}
+                      <td className="p-3 flex gap-2">
+                        <Skeleton className="h-8 w-16 rounded" />
+                        <Skeleton className="h-8 w-16 rounded" />
                       </td>
-                    ))}
-                    <td className="p-3 flex gap-2">
-                      {entityType !== "cv" &&
-                        (title === "ADMINS" ? (
-                          user?.isRoot ? (
-                            <Button
-                              onClick={() => handleDialogOpen("update", item)}
-                              size="sm"
-                            >
-                              Update
-                            </Button>
+                    </tr>
+                  ))
+                : paginatedData.map((item: T) => (
+                    <tr
+                      key={(item as any)._id}
+                      className="border-b border-white/10"
+                    >
+                      {columns.map((col) => (
+                        <td key={String(col.accessor)} className="p-3">
+                          {col.accessor === "isPremium" ? (
+                            <div className="flex items-center justify-center w-full h-full">
+                              {item[col.accessor] ? (
+                                <Icon
+                                  name="success"
+                                  className="w-5 h-5 text-green-400"
+                                />
+                              ) : (
+                                <Icon
+                                  name="x"
+                                  className="w-5 h-5 text-red-300"
+                                />
+                              )}
+                            </div>
+                          ) : col.accessor === "isRoot" ? (
+                            <div className="flex items-center justify-center w-full h-full">
+                              {item[col.accessor] ? (
+                                <Icon
+                                  name="success"
+                                  className="w-5 h-5 text-green-400"
+                                />
+                              ) : (
+                                <Icon
+                                  name="x"
+                                  className="w-5 h-5 text-red-300"
+                                />
+                              )}
+                            </div>
+                          ) : col.accessor === "user" && entityType === "cv" ? (
+                            (() => {
+                              const userObj = (item as any).userId;
+                              return userObj && typeof userObj === "object"
+                                ? `${userObj.firstName} ${userObj.lastName}`
+                                : "-";
+                            })()
+                          ) : (
+                            <span>{String(item[col.accessor])}</span>
+                          )}
+                        </td>
+                      ))}
+                      <td className="p-3 flex gap-2">
+                        {entityType !== "cv" &&
+                          (title === "ADMINS" ? (
+                            user?.isRoot ? (
+                              <Button
+                                onClick={() => handleDialogOpen("update", item)}
+                                size="sm"
+                              >
+                                Update
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={() => handleDialogOpen("update", item)}
+                                size="sm"
+                                disabled={(item as any)._id !== currentUserId}
+                              >
+                                Update
+                              </Button>
+                            )
                           ) : (
                             <Button
                               onClick={() => handleDialogOpen("update", item)}
                               size="sm"
-                              disabled={(item as any)._id !== currentUserId}
                             >
                               Update
                             </Button>
-                          )
+                          ))}
+                        {title === "ADMINS" ? (
+                          <Button
+                            onClick={() => handleDialogOpen("delete", item)}
+                            size="sm"
+                            variant="destructive"
+                            disabled={
+                              user?.isRoot
+                                ? (item as any).isRoot ||
+                                  (item as any)._id === currentUserId
+                                : true
+                            }
+                          >
+                            Delete
+                          </Button>
                         ) : (
                           <Button
-                            onClick={() => handleDialogOpen("update", item)}
+                            onClick={() => handleDialogOpen("delete", item)}
                             size="sm"
+                            variant="destructive"
+                            disabled={
+                              typeof (item as any).isRoot !== "undefined" &&
+                              ((item as any).isRoot ||
+                                (currentUserId &&
+                                  (item as any)._id === currentUserId))
+                            }
                           >
-                            Update
+                            Delete
                           </Button>
-                        ))}
-                      {title === "ADMINS" ? (
-                        <Button
-                          onClick={() => handleDialogOpen("delete", item)}
-                          size="sm"
-                          variant="destructive"
-                          disabled={
-                            user?.isRoot
-                              ? (item as any).isRoot ||
-                                (item as any)._id === currentUserId
-                              : true
-                          }
-                        >
-                          Delete
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handleDialogOpen("delete", item)}
-                          size="sm"
-                          variant="destructive"
-                          disabled={
-                            typeof (item as any).isRoot !== "undefined" &&
-                            ((item as any).isRoot ||
-                              (currentUserId &&
-                                (item as any)._id === currentUserId))
-                          }
-                        >
-                          Delete
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
-        <div className="self-start sm:self-auto sm:w-auto w-full">
-          <Button
-            onClick={() => {
-              const csv = toCSV(filteredData, columns);
-              downloadCSV(
-                csv,
-                `${title.replace(/\s+/g, "_").toLowerCase()}_export.csv`
-              );
-            }}
-          >
-            Export Data
-          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+            </tbody>
+          </table>
         </div>
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentPage((p) => Math.max(1, p - 1));
-                }}
-                className={
-                  currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                }
-              />
-            </PaginationItem>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum =
-                Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-              if (pageNum > totalPages) return null;
 
-              return (
-                <PaginationItem key={pageNum}>
-                  <PaginationLink
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCurrentPage(pageNum);
-                    }}
-                    isActive={currentPage === pageNum}
-                  >
-                    {pageNum}
-                  </PaginationLink>
-                </PaginationItem>
-              );
-            })}
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentPage((p) => Math.min(totalPages, p + 1));
-                }}
-                className={
-                  currentPage === totalPages
-                    ? "pointer-events-none opacity-50"
-                    : ""
-                }
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+          <div className="self-start sm:self-auto sm:w-auto w-full">
+            <Button
+              onClick={() => {
+                const csv = toCSV(filteredData, columns);
+                downloadCSV(
+                  csv,
+                  `${title.replace(/\s+/g, "_").toLowerCase()}_export.csv`
+                );
+              }}
+            >
+              Export Data
+            </Button>
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage((p) => Math.max(1, p - 1));
+                  }}
+                  className={
+                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  }
+                />
+              </PaginationItem>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum =
+                  Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                if (pageNum > totalPages) return null;
+
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(pageNum);
+                      }}
+                      isActive={currentPage === pageNum}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage((p) => Math.min(totalPages, p + 1));
+                  }}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
@@ -615,9 +652,11 @@ export default function AdminPage() {
       api
         .get("/api/templates")
         .then((res) => setTemplates(res.data.data || [])),
-      api.get("/api/cv").then((res) => setCvs(res.data.data || [])),
+      activeView === "CVS"
+        ? api.get("/api/cv/all").then((res) => setCvs(res.data.data || []))
+        : api.get("/api/cv").then((res) => setCvs(res.data.data || [])),
     ]).finally(() => setDataLoading(false));
-  }, []);
+  }, [activeView]);
 
   useEffect(() => {
     if (!loading && user && !user.isAdmin) {
@@ -679,8 +718,6 @@ export default function AdminPage() {
   };
 
   const handleDelete = async (item: Entity) => {
-    if (!window.confirm(`Delete this ${activeView.slice(0, -1)}?`)) return;
-
     const endpointMap = {
       ADMINS: "users",
       BASIC_USERS: "users",
@@ -689,7 +726,6 @@ export default function AdminPage() {
       CVS: "cv",
     };
     const endpoint = `/api/${endpointMap[activeView]}/${item._id}`;
-
     try {
       await api.delete(endpoint);
       fetchData();

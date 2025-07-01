@@ -137,29 +137,29 @@ export default function CVPreviewPage() {
       <div className="fixed right-24 top-1/2 transform -translate-y-1/2 flex flex-col space-y-8 z-50">
         <Button
           onClick={handleEdit}
-          size="icon"
-          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-full p-6 hover:bg-[hsl(var(--mc-primary))]"
+          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-xl p-6 hover:bg-[hsl(var(--mc-warm))]"
         >
-          <Icon name="edit" className="w-6 h-6 text-[hsl(var(--mc-primary))]" />
+          <Icon
+            name="edit"
+            className="!w-8 !h-8 text-[hsl(var(--mc-primary))]"
+          />
         </Button>
         <Button
           onClick={() => handleDownload(cvId, cv?.title || "")}
-          size="icon"
-          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-full p-6 hover:bg-[hsl(var(--mc-accent))] hover:text-white"
+          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-xl p-6 hover:bg-[hsl(var(--mc-warm))] hover:text-white"
         >
           <Icon
             name="download"
-            className="h-8 w-8 text-[hsl(var(--mc-primary))]"
+            className="!h-8 !w-8 text-[hsl(var(--mc-primary))]"
           />
         </Button>
         <Button
           onClick={() => router.push("/dashboard")}
-          size="icon"
-          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-full p-6 hover:bg-gray-100"
+          className="bg-[hsl(var(--mc-background))] shadow-lg rounded-xl p-6 hover:bg-[hsl(var(--mc-warm))]"
         >
           <Icon
-            name="arrow-left"
-            className="h-8 w-8 text-[hsl(var(--mc-primary))]"
+            name="done"
+            className="!h-8 !w-8 text-[hsl(var(--mc-primary))]"
           />
         </Button>
       </div>

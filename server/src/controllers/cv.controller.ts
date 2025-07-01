@@ -307,31 +307,28 @@ export const deleteCV = async (req: AuthRequest, res: Response) => {
         message: "Not authenticated",
       });
     }
-
-    const cv = await CV.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user._id,
-    });
-
+    const filter: any = { _id: req.params.id };
+    if (!req.user.isAdmin) {
+      filter.userId = req.user._id;
+    }
+    const cv = await CV.findOneAndDelete(filter);
     if (!cv) {
       return res.status(404).json({
         success: false,
         message: "CV not found",
       });
     }
-
-    res.json({
+    return res.json({
       success: true,
       message: "CV deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error deleting CV",
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }
-  return;
 };
 
 export const downloadCV = async (req: AuthRequest, res: Response) => {
@@ -533,4 +530,18 @@ export const getCVAnalytics = async (req: AuthRequest, res: Response) => {
     });
   }
   return;
+};
+
+export const getAllCVs = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+    const cvs = await CV.find().populate("userId", "firstName lastName email");
+    return res.json({ success: true, data: cvs });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Error fetching CVs" });
+  }
 };
