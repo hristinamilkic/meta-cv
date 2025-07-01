@@ -63,7 +63,7 @@ export interface ICV {
   _id: string;
   userId: string;
   title: string;
-  template: any; // Simplified for client-side
+  template: any; 
   personalDetails: IPersonalDetails;
   education: IEducation[];
   experience: IExperience[];

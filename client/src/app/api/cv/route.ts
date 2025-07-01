@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 export async function GET() {
   try {
-    const token = cookies().get("token")?.value;
+    const token = (await cookies()).get("token")?.value;
 
     if (!token) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const token = cookies().get("token")?.value;
+    const token = (await cookies()).get("token")?.value;
 
     if (!token) {
       return new NextResponse("Unauthorized", { status: 401 });

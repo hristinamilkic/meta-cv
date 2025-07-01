@@ -9,9 +9,7 @@ export default function Hero() {
         <Button className="bg-[#f49b8d] text-white text-lg px-8 py-4 rounded-xl shadow-lg hover:bg-[#e07b6b] transition font-semibold">BUILD YOUR CV</Button>
       </div>
       <div className="relative flex-1 flex justify-center items-center mt-12 md:mt-0">
-        {/* Illustration placeholder */}
         <div className="w-[420px] h-[420px] rounded-full bg-black/80 flex items-center justify-center shadow-2xl relative">
-          {/* Add floating icons/images here */}
           <span className="absolute -top-8 left-12 bg-white rounded-xl p-2 shadow-lg">✍️</span>
           <span className="absolute -bottom-8 right-12 bg-white rounded-xl p-2 shadow-lg">📋</span>
           <span className="text-white text-7xl">🧑‍💼</span>

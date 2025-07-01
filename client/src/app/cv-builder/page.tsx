@@ -179,14 +179,12 @@ function DatePicker({
   );
 }
 
-// Helper type guard
 function isRangeObject(
   val: any
 ): val is { from: Date | undefined; to: Date | undefined } {
   return val && typeof val === "object" && ("from" in val || "to" in val);
 }
 
-// Helper to deeply parse date fields in CV data
 function parseDatesInCVData(data: any): any {
   if (!data) return data;
   const parseDate = (d: any) => {
@@ -265,7 +263,6 @@ export default function CVBuilderPage() {
           const templateData = templateResponse.data.data;
           console.log("Template response data:", templateData);
           setTemplate(templateData);
-          // Set cvData to template.defaultData if present
           if (templateData.defaultData) {
             setCvData(parseDatesInCVData(templateData.defaultData));
           } else {
@@ -286,7 +283,6 @@ export default function CVBuilderPage() {
     fetchData();
   }, [cvId, templateId, router]);
 
-  // Add this useEffect to force iframe re-render on cvData change
   useEffect(() => {
     setRenderKey((prev) => prev + 1);
   }, [cvData]);
@@ -303,7 +299,6 @@ export default function CVBuilderPage() {
       const newData = JSON.parse(JSON.stringify(prev)); // Deep copy
       if (index !== undefined && Array.isArray(newData[section])) {
         if (isRangeObject(value)) {
-          // Always merge with previous value to preserve both from/to
           const prevRange = (newData[section] as any[])[index][name] || {};
           (newData[section] as any[])[index][name] = {
             from: value.from !== undefined ? value.from : prevRange.from,
@@ -358,7 +353,6 @@ export default function CVBuilderPage() {
     setRenderKey((prev) => prev + 1);
   };
 
-  // Handle profile photo upload
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -388,7 +382,6 @@ export default function CVBuilderPage() {
     ) =>
       arr.map((item) => {
         const newItem = { ...item };
-        // Format startDate and endDate as readable strings
         if (newItem[startField])
           newItem[startField] = formatDate(newItem[startField]);
         if (newItem[endField])
@@ -455,10 +448,8 @@ export default function CVBuilderPage() {
     try {
       let response;
       if (cvId) {
-        // Editing existing CV: use PUT
         response = await api.put(`/api/cv/${cvId}`, payload);
       } else {
-        // Creating new CV: use POST
         response = await api.post("/api/cv", payload);
       }
 
@@ -494,7 +485,6 @@ export default function CVBuilderPage() {
                 className="space-y-8 overflow-y-auto custom-scrollbar flex-1 p-2"
                 onSubmit={(e) => e.preventDefault()}
               >
-                {/* CV Name Field */}
                 <div className="mb-4">
                   <Label htmlFor="cvTitle" className="mb-2">
                     CV Name
@@ -837,7 +827,6 @@ export default function CVBuilderPage() {
               </form>
             </div>
           </div>
-          {/* Right: Preview */}
           <div className="w-2/3 h-full flex items-center justify-center">
             <div className="w-full h-full overflow-y-auto bg-transparent">
               <iframe

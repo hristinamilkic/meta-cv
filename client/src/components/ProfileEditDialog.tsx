@@ -70,7 +70,6 @@ export default function ProfileEditDialog({
         phone: formData.phone,
       };
 
-      // Only include password fields if user wants to change password
       if (formData.currentPassword && formData.newPassword) {
         if (formData.newPassword !== formData.confirmPassword) {
           setMessage("New passwords don't match");

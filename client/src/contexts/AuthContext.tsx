@@ -97,7 +97,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const from = searchParams.get("from") || "/dashboard";
         router.push(from);
       }
-      // Force reload to ensure new token is used and timer resets
       window.location.reload();
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to login";

@@ -33,7 +33,6 @@ export interface TemplateData {
         order: number;
       };
     };
-    // Add other sections as needed
   };
   styles: {
     primaryColor: string;

@@ -64,7 +64,6 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       mergedData.personalDetails?.firstName ||
       "Untitled CV";
 
-    // Validate required fields
     const requiredErrors: string[] = [];
     if (!mergedData.personalDetails?.fullName)
       requiredErrors.push("Full name is required");
@@ -121,7 +120,6 @@ export const createCV = async (req: AuthRequest, res: Response) => {
       template: templateId,
     });
 
-    // Generate thumbnail and update CV asynchronously (do not block response)
     generateCVThumbnail(mergedData, template)
       .then((thumbnail) => {
         cv.thumbnail = thumbnail;
@@ -251,7 +249,6 @@ export const updateCV = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Regenerate thumbnail if CV and template exist asynchronously (do not block response)
     (async () => {
       try {
         let templateObj: any = cv.template;

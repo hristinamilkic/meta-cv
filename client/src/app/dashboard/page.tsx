@@ -358,7 +358,6 @@ export default function DashboardPage() {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* CV Creation Trend Bar */}
                   <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
                     <div className="text-white text-base font-semibold mb-2">
                       CV Creation Trend
@@ -418,9 +417,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <Separator className="my-2 bg-white/20" />
-                {/* Bottom: Skills, Languages, Projects Ratio */}
                 <div className="grid grid-cols-3 gap-6 w-full flex-1">
-                  {/* Top Skills */}
                   <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
                     <div className="text-white text-base font-semibold mb-2">
                       Top Skills
@@ -447,7 +444,6 @@ export default function DashboardPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* Top Languages */}
                   <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
                     <div className="text-white text-base font-semibold mb-2">
                       Top Languages
@@ -474,7 +470,6 @@ export default function DashboardPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* CVs with/without Projects Pie (new) */}
                   <div className="bg-[#2d0b2e] rounded-2xl p-4 flex flex-col items-center justify-center">
                     <div className="text-white text-base font-semibold mb-2">
                       CVs With/Without Projects

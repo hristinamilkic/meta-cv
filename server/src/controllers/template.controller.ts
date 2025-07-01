@@ -46,8 +46,7 @@ export const templateController = {
         });
       }
 
-      // Always return the full template data when fetching a specific template
-      // since the user has already selected it and needs the templateData for building
+     
       res.json({
         success: true,
         data: template,
