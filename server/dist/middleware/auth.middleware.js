@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkPremium = exports.requireAuth = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const user_model_1 = __importDefault(require("../models/user.model"));
+const User_model_1 = __importDefault(require("../models/User.model"));
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const requireAuth = async (req, res, next) => {
     var _a;
@@ -15,7 +15,7 @@ const requireAuth = async (req, res, next) => {
             return res.status(401).json({ message: "No token provided" });
         }
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
-        const user = await user_model_1.default.findById(decoded.userId);
+        const user = await User_model_1.default.findById(decoded.userId);
         if (!user || !user.isActive) {
             return res.status(401).json({ message: "User not found or inactive" });
         }

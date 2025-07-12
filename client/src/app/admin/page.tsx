@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, FC, useCallback } from "react";
+import { useState, useEffect, useMemo, FC, useCallback, Suspense } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -791,56 +791,62 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute requireAdmin>
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-4xl flex flex-col items-center justify-center gap-8">
-          <div className="block sm:flex sm:justify-center overflow-x-auto w-full py-4 whitespace-nowrap">
-            <div className="inline-flex min-w-max gap-2 items-center border border-white/20 rounded-xl p-2 mx-auto">
-              {sidebarItems.map((item, index) => (
-                <div key={item} className="flex items-center gap-2">
-                  <Button
-                    onClick={() => setActiveView(item)}
-                    className={`whitespace-nowrap min-w-max px-6 py-3 text-sm md:text-base rounded-lg transition-colors duration-150 ${
-                      activeView === item
-                        ? "text-[hsl(var(--mc-secondary))] bg-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-background))] transition-all duration-300 shadow-lg"
-                        : "text-white bg-transparent shadow-none"
-                    }`}
-                  >
-                    {item.replace("_", "  ")}
-                  </Button>
-                  {index < sidebarItems.length - 1 && (
-                    <Separator
-                      orientation="vertical"
-                      className="h-6 bg-white/30"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <main className="w-full sm:w-[86%] flex justify-center">
-            <DataTable
-              data={activeData as any}
-              columns={activeColumns as any}
-              title={activeView.replace("_", " ")}
-              onAdd={handleAdd}
-              onUpdate={handleUpdate as any}
-              onDelete={handleDelete as any}
-              currentUserId={normalizedUser ? normalizedUser._id : ""}
-              entityType={
-                activeView === "TEMPLATES"
-                  ? "template"
-                  : activeView === "CVS"
-                    ? "cv"
-                    : "user"
-              }
-              loading={dataLoading}
-              user={normalizedUser}
-              fetchData={fetchData}
-            />
-          </main>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
-      </div>
+      }>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="w-full max-w-4xl flex flex-col items-center justify-center gap-8">
+            <div className="block sm:flex sm:justify-center overflow-x-auto w-full py-4 whitespace-nowrap">
+              <div className="inline-flex min-w-max gap-2 items-center border border-white/20 rounded-xl p-2 mx-auto">
+                {sidebarItems.map((item, index) => (
+                  <div key={item} className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setActiveView(item)}
+                      className={`whitespace-nowrap min-w-max px-6 py-3 text-sm md:text-base rounded-lg transition-colors duration-150 ${
+                        activeView === item
+                          ? "text-[hsl(var(--mc-secondary))] bg-[hsl(var(--mc-background))] hover:text-[hsl(var(--mc-background))] transition-all duration-300 shadow-lg"
+                          : "text-white bg-transparent shadow-none"
+                      }`}
+                    >
+                      {item.replace("_", "  ")}
+                    </Button>
+                    {index < sidebarItems.length - 1 && (
+                      <Separator
+                        orientation="vertical"
+                        className="h-6 bg-white/30"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <main className="w-full sm:w-[86%] flex justify-center">
+              <DataTable
+                data={activeData as any}
+                columns={activeColumns as any}
+                title={activeView.replace("_", " ")}
+                onAdd={handleAdd}
+                onUpdate={handleUpdate as any}
+                onDelete={handleDelete as any}
+                currentUserId={normalizedUser ? normalizedUser._id : ""}
+                entityType={
+                  activeView === "TEMPLATES"
+                    ? "template"
+                    : activeView === "CVS"
+                      ? "cv"
+                      : "user"
+                }
+                loading={dataLoading}
+                user={normalizedUser}
+                fetchData={fetchData}
+              />
+            </main>
+          </div>
+        </div>
+      </Suspense>
     </ProtectedRoute>
   );
 }

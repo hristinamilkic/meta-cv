@@ -1,6 +1,13 @@
-import { Document } from 'mongoose';
+import { Document } from "mongoose";
+import { IPersonalDetails } from "./cv.interface";
+import { IEducation } from "./cv.interface";
+import { IExperience } from "./cv.interface";
+import { ISkill } from "./cv.interface";
+import { ILanguage } from "./cv.interface";
+import { IProject } from "./cv.interface";
+import { ICertification } from "./cv.interface";
 export interface SectionLayout {
-    position: 'left' | 'right' | 'full';
+    position: "left" | "right" | "full";
     order: number;
     width?: string;
     margin?: string;
@@ -34,6 +41,7 @@ export interface TemplateSections {
 }
 export interface TemplateStyles {
     primaryColor: string;
+    colorOptions?: string[];
     secondaryColor: string;
     backgroundColor: string;
     fontFamily: string;
@@ -61,6 +69,17 @@ export interface ITemplate extends Document {
         html: string;
         css: string;
         js?: string;
+    };
+    defaultData: {
+        title: string;
+        personalDetails: IPersonalDetails;
+        education: IEducation[];
+        experience: IExperience[];
+        skills: ISkill[];
+        languages: ILanguage[];
+        projects: IProject[];
+        certifications: ICertification[];
+        isPublic: boolean;
     };
     metadata: {
         author: string;

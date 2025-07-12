@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { IUser } from "../models/user.model";
+import { IUser } from "../models/User.model";
 export interface AuthRequest extends Request {
     user?: IUser;
 }

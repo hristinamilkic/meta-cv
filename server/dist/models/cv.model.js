@@ -142,6 +142,7 @@ const CVSchema = new mongoose_1.Schema({
         linkedin: String,
         github: String,
         summary: String,
+        profileImage: String,
     },
     education: [EducationSchema],
     experience: [ExperienceSchema],
@@ -152,6 +153,10 @@ const CVSchema = new mongoose_1.Schema({
     isPublic: {
         type: Boolean,
         default: false,
+    },
+    thumbnail: {
+        type: String,
+        required: false,
     },
     lastModified: {
         type: Date,
@@ -169,4 +174,4 @@ CVSchema.pre("save", function (next) {
     next();
 });
 exports.default = mongoose_1.default.model("CV", CVSchema);
-//# sourceMappingURL=cv.model.js.map
+//# sourceMappingURL=CV.model.js.map

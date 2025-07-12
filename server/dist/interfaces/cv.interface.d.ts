@@ -52,6 +52,7 @@ export interface IPersonalDetails {
     linkedin?: string;
     github?: string;
     summary?: string;
+    profileImage?: string;
 }
 export interface ICV extends Document {
     userId: string;

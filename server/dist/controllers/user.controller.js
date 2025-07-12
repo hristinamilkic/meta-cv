@@ -6,14 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.userController = exports.deactivateUser = exports.updateUserRole = exports.updateProfile = exports.getProfile = exports.login = exports.register = exports.deleteUser = exports.updateUser = exports.createUser = exports.getAllUsers = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const user_model_1 = __importDefault(require("../models/user.model"));
+const User_model_1 = __importDefault(require("../models/User.model"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const crypto_1 = __importDefault(require("crypto"));
 const email_service_1 = require("../services/email.service");
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const getAllUsers = async (req, res) => {
     try {
-        const users = await user_model_1.default.find({}).select("-password");
+        const users = await User_model_1.default.find({}).select("-password");
         return res.status(200).json({ success: true, data: users });
     }
     catch (error) {
@@ -26,27 +26,33 @@ const getAllUsers = async (req, res) => {
 exports.getAllUsers = getAllUsers;
 const createUser = async (req, res) => {
     try {
-        const { email, password, firstName, lastName } = req.body;
+        const { email, password, firstName, lastName, isAdmin, isPremium } = req.body;
         if (!email || !password || !firstName || !lastName) {
             return res.status(400).json({
                 success: false,
                 message: "Please provide all required fields",
             });
         }
-        const existingUser = await user_model_1.default.findOne({ email });
+        if (isAdmin && !(req.user && req.user.isRoot)) {
+            return res.status(403).json({
+                success: false,
+                message: "Only root admins can create admin users. Use /create-admin.",
+            });
+        }
+        const existingUser = await User_model_1.default.findOne({ email });
         if (existingUser) {
             return res.status(400).json({
                 success: false,
                 message: "Email already registered",
             });
         }
-        const user = new user_model_1.default({
+        const user = new User_model_1.default({
             email,
             password,
             firstName,
             lastName,
             isAdmin: false,
-            isPremium: false,
+            isPremium: !!isPremium,
         });
         await user.save();
         return res.status(201).json({
@@ -58,6 +64,7 @@ const createUser = async (req, res) => {
                 lastName: user.lastName,
                 isAdmin: user.isAdmin,
                 isPremium: user.isPremium,
+                isRoot: user.isRoot,
             },
         });
     }
@@ -79,7 +86,7 @@ const updateUser = async (req, res) => {
                 message: "Invalid user ID",
             });
         }
-        const user = await user_model_1.default.findById(id);
+        const user = await User_model_1.default.findById(id);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -89,10 +96,27 @@ const updateUser = async (req, res) => {
         delete updates.password;
         delete updates.isAdmin;
         delete updates.isActive;
-        const updatedUser = await user_model_1.default.findByIdAndUpdate(id, updates, {
+        const updatedUser = await User_model_1.default.findByIdAndUpdate(id, updates, {
             new: true,
         }).select("-password");
-        return res.status(200).json({ success: true, data: updatedUser });
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found after update",
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: updatedUser._id,
+                email: updatedUser.email,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                isAdmin: updatedUser.isAdmin,
+                isPremium: updatedUser.isPremium,
+                isRoot: updatedUser.isRoot,
+            },
+        });
     }
     catch (error) {
         console.error("Error updating user:", error);
@@ -103,22 +127,33 @@ const updateUser = async (req, res) => {
 };
 exports.updateUser = updateUser;
 const deleteUser = async (req, res) => {
+    var _a;
     try {
-        const { id } = req.params;
-        if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
+        const { userId } = req.params;
+        if (!mongoose_1.default.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid user ID",
             });
         }
-        const user = await user_model_1.default.findById(id);
+        const user = await User_model_1.default.findById(userId);
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: "User not found",
             });
         }
-        await user_model_1.default.findByIdAndDelete(id);
+        if (user.isRoot) {
+            return res
+                .status(403)
+                .json({ success: false, message: "Cannot delete root admin." });
+        }
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.id.toString()) === user.id.toString()) {
+            return res
+                .status(403)
+                .json({ success: false, message: "You cannot delete yourself." });
+        }
+        await User_model_1.default.findByIdAndDelete(userId);
         return res
             .status(200)
             .json({ success: true, message: "User deleted successfully" });
@@ -140,14 +175,14 @@ const register = async (req, res) => {
                 message: "Please provide all required fields",
             });
         }
-        const existingUser = await user_model_1.default.findOne({ email });
+        const existingUser = await User_model_1.default.findOne({ email });
         if (existingUser) {
             return res.status(400).json({
                 success: false,
                 message: "Email already registered",
             });
         }
-        const user = new user_model_1.default({
+        const user = new User_model_1.default({
             email,
             password,
             firstName,
@@ -168,6 +203,7 @@ const register = async (req, res) => {
                     lastName: user.lastName,
                     isAdmin: user.isAdmin,
                     isPremium: user.isPremium,
+                    isRoot: user.isRoot,
                 },
             },
         });
@@ -189,7 +225,7 @@ const login = async (req, res) => {
                 message: "Please provide email and password",
             });
         }
-        const user = await user_model_1.default.findOne({ email }).select("+password");
+        const user = await User_model_1.default.findOne({ email }).select("+password");
         if (!user || !user.isActive) {
             return res.status(401).json({
                 success: false,
@@ -217,6 +253,7 @@ const login = async (req, res) => {
                     lastName: user.lastName,
                     isAdmin: user.isAdmin,
                     isPremium: user.isPremium,
+                    isRoot: user.isRoot,
                 },
             },
         });
@@ -238,7 +275,7 @@ const getProfile = async (req, res) => {
                 message: "Not authenticated",
             });
         }
-        const user = await user_model_1.default.findById(req.user._id).select("-password");
+        const user = await User_model_1.default.findById(req.user._id).select("-password");
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -256,53 +293,59 @@ const getProfile = async (req, res) => {
 };
 exports.getProfile = getProfile;
 const updateProfile = async (req, res) => {
-    var _a;
     try {
-        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a._id)) {
-            return res.status(401).json({
-                success: false,
-                message: "Not authenticated",
-            });
+        if (!req.user) {
+            return res.status(401).json({ message: "Not authenticated" });
         }
-        const { firstName, lastName, email } = req.body;
-        const user = await user_model_1.default.findById(req.user._id);
+        const { firstName, lastName, phone, currentPassword, newPassword } = req.body;
+        const user = await User_model_1.default.findById(req.user._id).select("+password");
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
+            return res.status(404).json({ message: "User not found" });
         }
-        if (email && email !== user.email) {
-            const existingUser = await user_model_1.default.findOne({ email });
-            if (existingUser) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Email already in use",
-                });
+        if (firstName)
+            user.firstName = firstName;
+        if (lastName)
+            user.lastName = lastName;
+        if (phone !== undefined)
+            user.phone = phone;
+        if (currentPassword && newPassword) {
+            const isMatch = await user.comparePassword(currentPassword);
+            if (!isMatch) {
+                return res
+                    .status(401)
+                    .json({ message: "Current password is incorrect" });
             }
-            user.email = email;
+            user.password = newPassword;
         }
-        user.firstName = firstName || user.firstName;
-        user.lastName = lastName || user.lastName;
         await user.save();
-        return res.json({
-            success: true,
+        const userResponse = {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            isPremium: user.isPremium,
+            isAdmin: user.isAdmin,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        };
+        res.json({
             message: "Profile updated successfully",
+            user: userResponse,
         });
     }
     catch (error) {
         console.error("Error updating profile:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Error updating profile" });
+        res.status(500).json({ message: "Error updating profile" });
     }
+    return;
 };
 exports.updateProfile = updateProfile;
 const updateUserRole = async (req, res) => {
     try {
         const { userId } = req.params;
         const { isAdmin, isPremium } = req.body;
-        const user = await user_model_1.default.findById(userId);
+        const user = await User_model_1.default.findById(userId);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -330,7 +373,7 @@ exports.updateUserRole = updateUserRole;
 const deactivateUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const user = await user_model_1.default.findById(userId);
+        const user = await User_model_1.default.findById(userId);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -361,14 +404,20 @@ exports.userController = {
                     .status(403)
                     .json({ message: "Only admins can create users" });
             }
+            if (req.body.isAdmin && !req.user.isRoot) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Only root admins can create admin users. Use /create-admin.",
+                });
+            }
             const { firstName, lastName, email, password, isPremium } = req.body;
-            const existingUser = await user_model_1.default.findOne({ email });
+            const existingUser = await User_model_1.default.findOne({ email });
             if (existingUser) {
                 return res.status(400).json({ message: "User already exists" });
             }
             const salt = await bcryptjs_1.default.genSalt(10);
             const hashedPassword = await bcryptjs_1.default.hash(password, salt);
-            const user = new user_model_1.default({
+            const user = new User_model_1.default({
                 firstName,
                 lastName,
                 email,
@@ -386,6 +435,7 @@ exports.userController = {
                     email: user.email,
                     isPremium: user.isPremium,
                     isAdmin: user.isAdmin,
+                    isRoot: user.isRoot,
                 },
             });
         }
@@ -398,7 +448,7 @@ exports.userController = {
     async login(req, res) {
         try {
             const { email, password } = req.body;
-            const user = await user_model_1.default.findOne({ email }).select("+password");
+            const user = await User_model_1.default.findOne({ email }).select("+password");
             if (!user || !user.isActive) {
                 return res.status(400).json({ message: "Invalid credentials" });
             }
@@ -418,6 +468,7 @@ exports.userController = {
                     email: user.email,
                     isPremium: user.isPremium,
                     isAdmin: user.isAdmin,
+                    isRoot: user.isRoot,
                 },
             });
         }
@@ -432,7 +483,7 @@ exports.userController = {
             if (!req.user) {
                 return res.status(401).json({ message: "Not authenticated" });
             }
-            const user = await user_model_1.default.findById(req.user._id).select("-password");
+            const user = await User_model_1.default.findById(req.user._id).select("-password");
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
@@ -443,6 +494,7 @@ exports.userController = {
                 email: user.email,
                 isPremium: user.isPremium,
                 isAdmin: user.isAdmin,
+                isRoot: user.isRoot,
             });
         }
         catch (error) {
@@ -459,7 +511,7 @@ exports.userController = {
                     .status(403)
                     .json({ message: "Only admins can view all users" });
             }
-            const users = await user_model_1.default.find().select("-password");
+            const users = await User_model_1.default.find().select("-password");
             res.json(users);
         }
         catch (error) {
@@ -478,7 +530,7 @@ exports.userController = {
             }
             const { userId } = req.params;
             const { firstName, lastName, email, isPremium } = req.body;
-            const user = await user_model_1.default.findById(userId);
+            const user = await User_model_1.default.findById(userId);
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
@@ -500,6 +552,7 @@ exports.userController = {
                     email: user.email,
                     isPremium: user.isPremium,
                     isAdmin: user.isAdmin,
+                    isRoot: user.isRoot,
                 },
             });
         }
@@ -514,33 +567,42 @@ exports.userController = {
             if (!req.user) {
                 return res.status(401).json({ message: "Not authenticated" });
             }
-            const { firstName, lastName, email } = req.body;
-            const user = await user_model_1.default.findById(req.user._id);
+            const { firstName, lastName, phone, currentPassword, newPassword } = req.body;
+            const user = await User_model_1.default.findById(req.user._id).select("+password");
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
-            }
-            if (email && email !== user.email) {
-                const existingUser = await user_model_1.default.findOne({ email });
-                if (existingUser) {
-                    return res.status(400).json({ message: "Email already in use" });
-                }
-                user.email = email;
             }
             if (firstName)
                 user.firstName = firstName;
             if (lastName)
                 user.lastName = lastName;
+            if (phone !== undefined)
+                user.phone = phone;
+            if (currentPassword && newPassword) {
+                const isMatch = await user.comparePassword(currentPassword);
+                if (!isMatch) {
+                    return res
+                        .status(401)
+                        .json({ message: "Current password is incorrect" });
+                }
+                user.password = newPassword;
+            }
             await user.save();
+            const userResponse = {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: user.phone,
+                isPremium: user.isPremium,
+                isAdmin: user.isAdmin,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+                isRoot: user.isRoot,
+            };
             res.json({
                 message: "Profile updated successfully",
-                user: {
-                    id: user._id,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    email: user.email,
-                    isPremium: user.isPremium,
-                    isAdmin: user.isAdmin,
-                },
+                user: userResponse,
             });
         }
         catch (error) {
@@ -555,7 +617,7 @@ exports.userController = {
                 return res.status(401).json({ message: "Not authenticated" });
             }
             const { currentPassword, newPassword } = req.body;
-            const user = await user_model_1.default.findById(req.user._id).select("+password");
+            const user = await User_model_1.default.findById(req.user._id).select("+password");
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
@@ -578,7 +640,7 @@ exports.userController = {
     async requestPasswordReset(req, res) {
         try {
             const { email } = req.body;
-            const user = await user_model_1.default.findOne({ email });
+            const user = await User_model_1.default.findOne({ email });
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
@@ -587,15 +649,13 @@ exports.userController = {
             try {
                 await email_service_1.emailService.sendPasswordResetEmail(email, resetToken);
                 res.json({
-                    message: "Password reset email sent",
-                    resetToken: resetToken,
+                    message: "Password reset email sent successfully",
                 });
             }
             catch (emailError) {
-                console.log("Email service not configured, returning token for testing");
-                res.json({
-                    message: "Password reset token generated (email service not configured)",
-                    resetToken: resetToken,
+                console.error("Error sending email:", emailError);
+                res.status(500).json({
+                    message: "Error sending password reset email. Please try again later.",
                 });
             }
         }
@@ -607,21 +667,26 @@ exports.userController = {
     },
     async resetPassword(req, res) {
         try {
-            const { token, password } = req.body;
+            const { code, "new-password": newPassword } = req.body;
+            if (!code || !newPassword) {
+                return res.status(400).json({
+                    message: "Code and new-password are required",
+                });
+            }
             const resetPasswordToken = crypto_1.default
                 .createHash("sha256")
-                .update(token)
+                .update(code)
                 .digest("hex");
-            const user = await user_model_1.default.findOne({
+            const user = await User_model_1.default.findOne({
                 resetPasswordToken,
                 resetPasswordExpire: { $gt: Date.now() },
             });
             if (!user) {
                 return res
                     .status(400)
-                    .json({ message: "Invalid or expired reset token" });
+                    .json({ message: "Invalid or expired reset code" });
             }
-            user.password = password;
+            user.password = newPassword;
             user.resetPasswordToken = undefined;
             user.resetPasswordExpire = undefined;
             await user.save();
@@ -632,6 +697,137 @@ exports.userController = {
             res.status(500).json({ message: "Error resetting password" });
         }
         return;
+    },
+    async logout(req, res) {
+        try {
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+                path: "/",
+            });
+            res.json({ message: "Logged out successfully" });
+        }
+        catch (error) {
+            console.error("Error during logout:", error);
+            res.status(500).json({ message: "Error during logout" });
+        }
+        return;
+    },
+    async verifyResetCode(req, res) {
+        try {
+            const { code } = req.body;
+            if (!code) {
+                return res
+                    .status(400)
+                    .json({ valid: false, message: "Code is required" });
+            }
+            const resetPasswordToken = crypto_1.default
+                .createHash("sha256")
+                .update(code)
+                .digest("hex");
+            const user = await User_model_1.default.findOne({
+                resetPasswordToken,
+                resetPasswordExpire: { $gt: Date.now() },
+            });
+            if (!user) {
+                return res
+                    .status(400)
+                    .json({ valid: false, message: "Invalid or expired reset code" });
+            }
+            return res.json({ valid: true });
+        }
+        catch (error) {
+            console.error("Error verifying reset code:", error);
+            return res
+                .status(500)
+                .json({ valid: false, message: "Error verifying reset code" });
+        }
+    },
+    async updateUserPasswordByRoot(req, res) {
+        var _a;
+        try {
+            if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.isRoot)) {
+                return res
+                    .status(403)
+                    .json({ success: false, message: "Root admin access required" });
+            }
+            const { userId } = req.params;
+            const { newPassword } = req.body;
+            if (!newPassword) {
+                return res
+                    .status(400)
+                    .json({ success: false, message: "New password is required" });
+            }
+            const user = await User_model_1.default.findById(userId);
+            if (!user) {
+                return res
+                    .status(404)
+                    .json({ success: false, message: "User not found" });
+            }
+            user.password = newPassword;
+            await user.save();
+            return res.status(200).json({
+                success: true,
+                message: "Password updated successfully by root admin",
+            });
+        }
+        catch (error) {
+            console.error("Error updating user password by root:", error);
+            return res
+                .status(500)
+                .json({ success: false, message: "Error updating user password" });
+        }
+    },
+    async createAdminByRoot(req, res) {
+        var _a;
+        try {
+            if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.isRoot)) {
+                return res
+                    .status(403)
+                    .json({ success: false, message: "Root admin access required" });
+            }
+            const { firstName, lastName, email, password } = req.body;
+            if (!firstName || !lastName || !email || !password) {
+                return res
+                    .status(400)
+                    .json({ success: false, message: "All fields are required" });
+            }
+            const existingUser = await User_model_1.default.findOne({ email });
+            if (existingUser) {
+                return res
+                    .status(400)
+                    .json({ success: false, message: "Email already registered" });
+            }
+            const user = new User_model_1.default({
+                firstName,
+                lastName,
+                email,
+                password,
+                isAdmin: true,
+                isPremium: true,
+            });
+            await user.save();
+            return res.status(201).json({
+                success: true,
+                message: "Admin created successfully",
+                user: {
+                    id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    isAdmin: user.isAdmin,
+                    isPremium: user.isPremium,
+                    isRoot: user.isRoot,
+                },
+            });
+        }
+        catch (error) {
+            console.error("Error creating admin by root:", error);
+            return res
+                .status(500)
+                .json({ success: false, message: "Error creating admin" });
+        }
     },
 };
 //# sourceMappingURL=user.controller.js.map

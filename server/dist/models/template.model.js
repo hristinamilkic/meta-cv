@@ -119,6 +119,9 @@ const TemplateStylesSchema = new mongoose_1.Schema({
         type: String,
         required: true,
     },
+    colorOptions: {
+        type: [String],
+    },
     secondaryColor: {
         type: String,
         required: true,
@@ -175,6 +178,17 @@ const TemplateDataSchema = new mongoose_1.Schema({
         required: true,
     },
     js: String,
+}, { _id: false });
+const TemplateDefaultDataSchema = new mongoose_1.Schema({
+    title: { type: String, required: true },
+    personalDetails: { type: Object, required: true },
+    education: { type: [Object], required: true },
+    experience: { type: [Object], required: true },
+    skills: { type: [Object], required: true },
+    languages: { type: [Object], required: true },
+    projects: { type: [Object], required: true },
+    certifications: { type: [Object], required: true },
+    isPublic: { type: Boolean, required: true },
 }, { _id: false });
 const TemplateMetadataSchema = new mongoose_1.Schema({
     author: {
@@ -253,6 +267,10 @@ const TemplateSchema = new mongoose_1.Schema({
     },
     templateData: {
         type: TemplateDataSchema,
+        required: true,
+    },
+    defaultData: {
+        type: TemplateDefaultDataSchema,
         required: true,
     },
     metadata: {

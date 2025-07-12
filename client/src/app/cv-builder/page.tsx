@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import api from "@/services/api";
 import { ICV } from "@/interfaces/cv.interface";
-import Handlebars from "handlebars";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -90,9 +89,17 @@ function stylesToCssVars(styles: Template["styles"]) {
   return cssVars.join("\n");
 }
 
-function renderTemplateHtml(html: string, data: any) {
-  const template = Handlebars.compile(html);
-  return template(data);
+async function renderTemplateHtml(html: string, data: any) {
+  try {
+    // Use dynamic import with explicit path and error handling
+    const HandlebarsModule = await import("handlebars");
+    const Handlebars = HandlebarsModule.default || HandlebarsModule;
+    const template = Handlebars.compile(html);
+    return template(data);
+  } catch (error) {
+    console.error("Error rendering template:", error);
+    return `<div>Error rendering template: ${error}</div>`;
+  }
 }
 
 function formatDate(date: Date | string | undefined) {
@@ -219,6 +226,10 @@ export default function CVBuilderPage() {
   const [error, setError] = useState("");
   const [renderKey, setRenderKey] = useState(0);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState(
+    "<html><body><p>Loading preview...</p></body></html>"
+  );
+  const [previewLoading, setPreviewLoading] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -422,20 +433,46 @@ export default function CVBuilderPage() {
     return clone;
   };
 
-  const generatePreviewHtml = useCallback(() => {
+  const generatePreviewHtml = useCallback(async () => {
     if (!template) return "";
-    let templateData = template.templateData;
-    let styles = template.styles;
-    if (!templateData || !templateData.css || !templateData.html) {
-      return "<html><body><p>Template data not available</p></body></html>";
+    try {
+      let templateData = template.templateData;
+      let styles = template.styles;
+      if (!templateData || !templateData.css || !templateData.html) {
+        return "<html><body><p>Template data not available</p></body></html>";
+      }
+      const cssVars = styles ? `:root {${stylesToCssVars(styles)}}` : "";
+      const css = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap');\nbody, * { font-family: 'Montserrat', Arial, sans-serif !important; }\n${cssVars}\n${templateData.css}`;
+      const html = await renderTemplateHtml(templateData.html, {
+        ...formatCVDataForPreview(cvData),
+      });
+      return `<html><head><style>${css}</style></head><body>${html}</body></html>`;
+    } catch (error) {
+      console.error("Error generating preview HTML:", error);
+      return `<html><body><p>Error generating preview: ${error}</p></body></html>`;
     }
-    const cssVars = styles ? `:root {${stylesToCssVars(styles)}}` : "";
-    const css = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap');\nbody, * { font-family: 'Montserrat', Arial, sans-serif !important; }\n${cssVars}\n${templateData.css}`;
-    const html = renderTemplateHtml(templateData.html, {
-      ...formatCVDataForPreview(cvData),
-    });
-    return `<html><head><style>${css}</style></head><body>${html}</body></html>`;
   }, [template, cvData]);
+
+  // Update preview HTML when template or cvData changes
+  useEffect(() => {
+    const updatePreview = async () => {
+      if (template) {
+        setPreviewLoading(true);
+        try {
+          const html = await generatePreviewHtml();
+          setPreviewHtml(html);
+        } catch (error) {
+          console.error("Error updating preview:", error);
+          setPreviewHtml(
+            `<html><body><p>Error updating preview: ${error}</p></body></html>`
+          );
+        } finally {
+          setPreviewLoading(false);
+        }
+      }
+    };
+    updatePreview();
+  }, [template, cvData, generatePreviewHtml]);
 
   const handleFinishBuild = async () => {
     const payload = {
@@ -828,12 +865,21 @@ export default function CVBuilderPage() {
             </div>
           </div>
           <div className="w-2/3 h-full flex items-center justify-center">
-            <div className="w-full h-full overflow-y-auto bg-transparent">
+            <div className="w-full h-full overflow-y-auto bg-transparent relative">
+              {previewLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                    <p className="text-gray-600">Generating preview...</p>
+                  </div>
+                </div>
+              )}
               <iframe
                 key={renderKey}
-                srcDoc={generatePreviewHtml()}
+                srcDoc={previewHtml}
                 title="CV Preview"
                 className="w-full h-full border-0"
+                onLoad={() => setPreviewLoading(false)}
               />
             </div>
           </div>

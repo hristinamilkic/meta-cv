@@ -7,8 +7,9 @@ export declare const createCV: (req: AuthRequest, res: Response) => Promise<Resp
 export declare const getUserCVs: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
 export declare const getCVById: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
 export declare const updateCV: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const deleteCV: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const deleteCV: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const downloadCV: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
 export declare const getCVAnalytics: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const getAllCVs: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 export {};
 //# sourceMappingURL=cv.controller.d.ts.map

@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware";
 export declare const getAllUsers: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
-export declare const createUser: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+export declare const createUser: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const updateUser: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
-export declare const deleteUser: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+export declare const deleteUser: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const register: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const login: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const getProfile: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
-export declare const updateProfile: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+export declare const updateProfile: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
 export declare const updateUserRole: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const deactivateUser: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const userController: {
@@ -20,5 +20,9 @@ export declare const userController: {
     changePassword(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
     requestPasswordReset(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
     resetPassword(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+    logout(req: Request, res: Response): Promise<void>;
+    verifyResetCode(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    updateUserPasswordByRoot(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>>>;
+    createAdminByRoot(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>>>;
 };
 //# sourceMappingURL=user.controller.d.ts.map

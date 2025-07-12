@@ -152,7 +152,9 @@ export const UpdateUserForm = ({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <Label htmlFor="firstName">First Name</Label>
+        <Label className="text-black" htmlFor="firstName">
+          First Name
+        </Label>
         <Input
           id="firstName"
           name="firstName"
@@ -163,7 +165,9 @@ export const UpdateUserForm = ({
         />
       </div>
       <div>
-        <Label htmlFor="lastName">Last Name</Label>
+        <Label className="text-gray-900" htmlFor="lastName">
+          Last Name
+        </Label>
         <Input
           id="lastName"
           name="lastName"
@@ -174,7 +178,9 @@ export const UpdateUserForm = ({
         />
       </div>
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label className="text-gray-900" htmlFor="email">
+          Email
+        </Label>
         <Input
           id="email"
           name="email"
@@ -186,7 +192,9 @@ export const UpdateUserForm = ({
         />
         {user?.isRoot && (
           <div className="mt-4">
-            <Label htmlFor="newPassword">New Password</Label>
+            <Label className="text-gray-900" htmlFor="newPassword">
+              New Password
+            </Label>
             <Input
               id="newPassword"
               name="newPassword"
@@ -202,7 +210,9 @@ export const UpdateUserForm = ({
       {!(formState.isAdmin || false) && (
         <div className="flex justify-end">
           <div className="flex items-center my-2 gap-4 border border-[hsl(var(--mc-warm))] w-fit rounded-lg p-2">
-            <Label htmlFor="isPremium">PREMIUM STATUS</Label>
+            <Label className="text-gray-900" htmlFor="isPremium">
+              PREMIUM STATUS
+            </Label>
             <Switch
               id="isPremium"
               checked={!!formState.isPremium}
@@ -227,7 +237,9 @@ export const AddTemplateForm = ({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <Label htmlFor="name">Name</Label>
+        <Label className="text-gray-900" htmlFor="name">
+          Name
+        </Label>
         <Input
           id="name"
           name="name"
@@ -239,7 +251,9 @@ export const AddTemplateForm = ({
         />
       </div>
       <div>
-        <Label htmlFor="description">Description</Label>
+        <Label className="text-gray-900" htmlFor="description">
+          Description
+        </Label>
         <Input
           id="description"
           name="description"
@@ -258,7 +272,9 @@ export const AddTemplateForm = ({
             setFormState({ ...formState, isPremium: !!checked })
           }
         />
-        <Label htmlFor="isPremium">Premium</Label>
+        <Label className="text-gray-900" htmlFor="isPremium">
+          Premium
+        </Label>
       </div>
       {addError && <div className="text-red-500 text-sm">{addError}</div>}
     </form>
@@ -274,7 +290,9 @@ export const UpdateTemplateForm = ({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <Label htmlFor="name">Name</Label>
+        <Label className="text-gray-900" htmlFor="name">
+          Name
+        </Label>
         <Input
           id="name"
           name="name"
@@ -285,7 +303,9 @@ export const UpdateTemplateForm = ({
         />
       </div>
       <div>
-        <Label htmlFor="description">Description</Label>
+        <Label className="text-gray-900" htmlFor="description">
+          Description
+        </Label>
         <Input
           id="description"
           name="description"
@@ -303,7 +323,9 @@ export const UpdateTemplateForm = ({
             setFormState({ ...formState, isPremium: !!checked })
           }
         />
-        <Label htmlFor="isPremium">Premium</Label>
+        <Label className="text-gray-900" htmlFor="isPremium">
+          Premium
+        </Label>
       </div>
     </form>
   );
@@ -317,7 +339,9 @@ export const PasswordUpdateForm = ({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
-        <Label htmlFor="newPassword">New Password</Label>
+        <Label className="text-gray-900" htmlFor="newPassword">
+          New Password
+        </Label>
         <Input
           id="newPassword"
           name="newPassword"

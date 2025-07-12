@@ -3,12 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCVAnalytics = exports.downloadCV = exports.deleteCV = exports.updateCV = exports.getCVById = exports.getUserCVs = exports.createCV = void 0;
-const cv_model_1 = __importDefault(require("../models/cv.model"));
+exports.getAllCVs = exports.getCVAnalytics = exports.downloadCV = exports.deleteCV = exports.updateCV = exports.getCVById = exports.getUserCVs = exports.createCV = void 0;
+const CV_model_1 = __importDefault(require("../models/CV.model"));
 const pdf_service_1 = require("../services/pdf.service");
 const template_model_1 = __importDefault(require("../models/template.model"));
+const template_thumbnail_service_1 = require("../services/template-thumbnail.service");
 const createCV = async (req, res) => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f, _g;
     try {
         if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a._id)) {
             return res.status(401).json({
@@ -30,23 +31,88 @@ const createCV = async (req, res) => {
                 message: "Premium template requires premium subscription",
             });
         }
-        const personalDetails = data.personalDetails || data.personalInfo || {};
-        const title = data.title ||
-            personalDetails.fullName ||
-            personalDetails.firstName ||
+        const defaultData = template.defaultData || {};
+        const mergedData = {
+            ...defaultData,
+            ...data,
+            personalDetails: {
+                ...defaultData.personalDetails,
+                ...((data === null || data === void 0 ? void 0 : data.personalDetails) || {}),
+            },
+            education: (data === null || data === void 0 ? void 0 : data.education) || defaultData.education || [],
+            experience: (data === null || data === void 0 ? void 0 : data.experience) || defaultData.experience || [],
+            skills: (data === null || data === void 0 ? void 0 : data.skills) || defaultData.skills || [],
+            languages: (data === null || data === void 0 ? void 0 : data.languages) || defaultData.languages || [],
+            projects: (data === null || data === void 0 ? void 0 : data.projects) || defaultData.projects || [],
+            certifications: (data === null || data === void 0 ? void 0 : data.certifications) || defaultData.certifications || [],
+            isPublic: (_c = (_b = data === null || data === void 0 ? void 0 : data.isPublic) !== null && _b !== void 0 ? _b : defaultData.isPublic) !== null && _c !== void 0 ? _c : false,
+        };
+        const title = mergedData.title ||
+            ((_d = mergedData.personalDetails) === null || _d === void 0 ? void 0 : _d.fullName) ||
+            ((_e = mergedData.personalDetails) === null || _e === void 0 ? void 0 : _e.firstName) ||
             "Untitled CV";
-        const cv = await cv_model_1.default.create({
+        const requiredErrors = [];
+        if (!((_f = mergedData.personalDetails) === null || _f === void 0 ? void 0 : _f.fullName))
+            requiredErrors.push("Full name is required");
+        if (!((_g = mergedData.personalDetails) === null || _g === void 0 ? void 0 : _g.email))
+            requiredErrors.push("Email is required");
+        (mergedData.education || []).forEach((edu, i) => {
+            if (!edu.institution)
+                requiredErrors.push(`Education[${i + 1}]: Institution is required`);
+            if (!edu.degree)
+                requiredErrors.push(`Education[${i + 1}]: Degree is required`);
+        });
+        (mergedData.experience || []).forEach((exp, i) => {
+            if (!exp.company)
+                requiredErrors.push(`Experience[${i + 1}]: Company is required`);
+            if (!exp.position)
+                requiredErrors.push(`Experience[${i + 1}]: Position is required`);
+        });
+        (mergedData.skills || []).forEach((skill, i) => {
+            if (!skill.name)
+                requiredErrors.push(`Skill[${i + 1}]: Name is required`);
+        });
+        (mergedData.languages || []).forEach((lang, i) => {
+            if (!lang.name)
+                requiredErrors.push(`Language[${i + 1}]: Name is required`);
+        });
+        (mergedData.projects || []).forEach((proj, i) => {
+            if (!proj.name)
+                requiredErrors.push(`Project[${i + 1}]: Name is required`);
+        });
+        (mergedData.certifications || []).forEach((cert, i) => {
+            if (!cert.name)
+                requiredErrors.push(`Certification[${i + 1}]: Name is required`);
+            if (!cert.issuer)
+                requiredErrors.push(`Certification[${i + 1}]: Issuer is required`);
+        });
+        if (requiredErrors.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation error",
+                errors: requiredErrors,
+            });
+        }
+        const cv = await CV_model_1.default.create({
             userId: req.user._id,
             title,
-            personalDetails,
-            education: data.education || [],
-            experience: data.experience || [],
-            skills: data.skills || [],
-            languages: data.languages || [],
-            projects: data.projects || [],
-            certifications: data.certifications || [],
-            isPublic: (_b = data.isPublic) !== null && _b !== void 0 ? _b : false,
+            personalDetails: mergedData.personalDetails,
+            education: mergedData.education,
+            experience: mergedData.experience,
+            skills: mergedData.skills,
+            languages: mergedData.languages,
+            projects: mergedData.projects,
+            certifications: mergedData.certifications,
+            isPublic: mergedData.isPublic,
             template: templateId,
+        });
+        (0, template_thumbnail_service_1.generateCVThumbnail)(mergedData, template)
+            .then((thumbnail) => {
+            cv.thumbnail = thumbnail;
+            return cv.save();
+        })
+            .catch((thumbErr) => {
+            console.error("Failed to generate CV thumbnail:", thumbErr);
         });
         res.status(201).json({
             success: true,
@@ -72,7 +138,7 @@ const getUserCVs = async (req, res) => {
                 message: "Not authenticated",
             });
         }
-        const cvs = await cv_model_1.default.find({ userId: req.user._id })
+        const cvs = await CV_model_1.default.find({ userId: req.user._id })
             .populate("template", "name thumbnail")
             .sort({ createdAt: -1 });
         res.json({
@@ -99,7 +165,7 @@ const getCVById = async (req, res) => {
                 message: "Not authenticated",
             });
         }
-        const cv = await cv_model_1.default.findOne({
+        const cv = await CV_model_1.default.findOne({
             _id: req.params.id,
             userId: req.user._id,
         }).populate("template");
@@ -157,13 +223,41 @@ const updateCV = async (req, res) => {
         if (title) {
             updateData.title = title;
         }
-        const cv = await cv_model_1.default.findOneAndUpdate({ _id: req.params.id, userId: req.user._id }, updateData, { new: true }).populate("template");
+        const cv = await CV_model_1.default.findOneAndUpdate({ _id: req.params.id, userId: req.user._id }, updateData, { new: true }).populate("template");
         if (!cv) {
             return res.status(404).json({
                 success: false,
                 message: "CV not found",
             });
         }
+        (async () => {
+            var _a, _b, _c;
+            try {
+                let templateObj = cv.template;
+                if (!templateObj ||
+                    typeof templateObj !== "object" ||
+                    !("templateData" in templateObj) ||
+                    !((_a = templateObj.templateData) === null || _a === void 0 ? void 0 : _a.html)) {
+                    templateObj = await template_model_1.default.findById(((_c = (_b = cv.template) === null || _b === void 0 ? void 0 : _b.toString) === null || _c === void 0 ? void 0 : _c.call(_b)) || cv.template);
+                }
+                if (templateObj &&
+                    templateObj.templateData &&
+                    templateObj.templateData.html) {
+                    const latestCV = cv.toObject ? cv.toObject() : cv;
+                    (0, template_thumbnail_service_1.generateCVThumbnail)(latestCV, templateObj)
+                        .then((thumbnail) => {
+                        cv.thumbnail = thumbnail;
+                        return cv.save();
+                    })
+                        .catch((thumbErr) => {
+                        console.error("Failed to regenerate CV thumbnail:", thumbErr);
+                    });
+                }
+            }
+            catch (thumbErr) {
+                console.error("Failed to regenerate CV thumbnail:", thumbErr);
+            }
+        })();
         res.json({
             success: true,
             data: cv,
@@ -188,29 +282,29 @@ const deleteCV = async (req, res) => {
                 message: "Not authenticated",
             });
         }
-        const cv = await cv_model_1.default.findOneAndDelete({
-            _id: req.params.id,
-            userId: req.user._id,
-        });
+        const filter = { _id: req.params.id };
+        if (!req.user.isAdmin) {
+            filter.userId = req.user._id;
+        }
+        const cv = await CV_model_1.default.findOneAndDelete(filter);
         if (!cv) {
             return res.status(404).json({
                 success: false,
                 message: "CV not found",
             });
         }
-        res.json({
+        return res.json({
             success: true,
             message: "CV deleted successfully",
         });
     }
     catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Error deleting CV",
             error: error instanceof Error ? error.message : "Unknown error",
         });
     }
-    return;
 };
 exports.deleteCV = deleteCV;
 const downloadCV = async (req, res) => {
@@ -222,7 +316,7 @@ const downloadCV = async (req, res) => {
                 message: "Not authenticated",
             });
         }
-        const cv = (await cv_model_1.default.findOne({
+        const cv = (await CV_model_1.default.findOne({
             _id: req.params.id,
             userId: req.user._id,
         }).populate("template"));
@@ -280,13 +374,14 @@ const getCVAnalytics = async (req, res) => {
                 message: "Not authenticated",
             });
         }
-        const totalCVs = await cv_model_1.default.countDocuments({ userId: req.user._id });
-        const lastWeekCVs = await cv_model_1.default.countDocuments({
-            userId: req.user._id,
+        const userId = req.user._id;
+        const totalCVs = await CV_model_1.default.countDocuments({ userId });
+        const lastWeekCVs = await CV_model_1.default.countDocuments({
+            userId,
             createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         });
-        const templateUsage = await cv_model_1.default.aggregate([
-            { $match: { userId: req.user._id } },
+        const templateUsage = await CV_model_1.default.aggregate([
+            { $match: { userId } },
             { $group: { _id: "$template", count: { $sum: 1 } } },
             {
                 $lookup: {
@@ -299,12 +394,83 @@ const getCVAnalytics = async (req, res) => {
             { $unwind: "$template" },
             { $project: { templateName: "$template.name", count: 1, _id: 0 } },
         ]);
+        const skillAgg = await CV_model_1.default.aggregate([
+            { $match: { userId } },
+            { $unwind: "$skills" },
+            { $group: { _id: "$skills.name", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+        ]);
+        const mostCommonSkills = skillAgg.map((s) => ({
+            name: s._id,
+            count: s.count,
+        }));
+        const langAgg = await CV_model_1.default.aggregate([
+            { $match: { userId } },
+            { $unwind: "$languages" },
+            { $group: { _id: "$languages.name", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+        ]);
+        const mostCommonLanguages = langAgg.map((l) => ({
+            name: l._id,
+            count: l.count,
+        }));
+        const now = new Date();
+        const lastYear = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
+        const trendAgg = await CV_model_1.default.aggregate([
+            { $match: { userId, createdAt: { $gte: lastYear } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { _id: 1 } },
+        ]);
+        const creationTrend = trendAgg.map((t) => ({
+            month: t._id,
+            count: t.count,
+        }));
+        const allCVs = await CV_model_1.default.find({ userId });
+        let totalSections = 0;
+        allCVs.forEach((cv) => {
+            var _a, _b, _c, _d, _e, _f;
+            totalSections +=
+                (((_a = cv.education) === null || _a === void 0 ? void 0 : _a.length) ? 1 : 0) +
+                    (((_b = cv.experience) === null || _b === void 0 ? void 0 : _b.length) ? 1 : 0) +
+                    (((_c = cv.skills) === null || _c === void 0 ? void 0 : _c.length) ? 1 : 0) +
+                    (((_d = cv.languages) === null || _d === void 0 ? void 0 : _d.length) ? 1 : 0) +
+                    (((_e = cv.projects) === null || _e === void 0 ? void 0 : _e.length) ? 1 : 0) +
+                    (((_f = cv.certifications) === null || _f === void 0 ? void 0 : _f.length) ? 1 : 0);
+        });
+        const avgSectionsPerCV = allCVs.length ? totalSections / allCVs.length : 0;
+        const cvSectionCounts = allCVs.map((cv) => {
+            var _a, _b, _c, _d, _e, _f;
+            return ({
+                id: cv._id,
+                title: cv.title,
+                sectionCount: (((_a = cv.education) === null || _a === void 0 ? void 0 : _a.length) ? 1 : 0) +
+                    (((_b = cv.experience) === null || _b === void 0 ? void 0 : _b.length) ? 1 : 0) +
+                    (((_c = cv.skills) === null || _c === void 0 ? void 0 : _c.length) ? 1 : 0) +
+                    (((_d = cv.languages) === null || _d === void 0 ? void 0 : _d.length) ? 1 : 0) +
+                    (((_e = cv.projects) === null || _e === void 0 ? void 0 : _e.length) ? 1 : 0) +
+                    (((_f = cv.certifications) === null || _f === void 0 ? void 0 : _f.length) ? 1 : 0),
+            });
+        });
+        cvSectionCounts.sort((a, b) => b.sectionCount - a.sectionCount);
+        const mostSectionCVs = cvSectionCounts.slice(0, 5);
         res.json({
             success: true,
             data: {
                 totalCVs,
                 lastWeekCVs,
                 templateUsage,
+                mostCommonSkills,
+                mostCommonLanguages,
+                creationTrend,
+                avgSectionsPerCV,
+                mostSectionCVs,
             },
         });
     }
@@ -318,4 +484,20 @@ const getCVAnalytics = async (req, res) => {
     return;
 };
 exports.getCVAnalytics = getCVAnalytics;
+const getAllCVs = async (req, res) => {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.isAdmin)) {
+            return res.status(403).json({ success: false, message: "Forbidden" });
+        }
+        const cvs = await CV_model_1.default.find().populate("userId", "firstName lastName email");
+        return res.json({ success: true, data: cvs });
+    }
+    catch (error) {
+        return res
+            .status(500)
+            .json({ success: false, message: "Error fetching CVs" });
+    }
+};
+exports.getAllCVs = getAllCVs;
 //# sourceMappingURL=cv.controller.js.map

@@ -8,9 +8,20 @@ const template_model_1 = __importDefault(require("../models/template.model"));
 exports.templateController = {
     async getTemplates(req, res) {
         try {
-            const templates = await template_model_1.default.find()
-                .select("name thumbnail isPremium description")
-                .sort({ isPremium: 1, name: 1 });
+            const templatesFromDb = await template_model_1.default.find()
+                .select("name preview isPremium description")
+                .sort({ isPremium: 1, name: 1 })
+                .lean();
+            const templates = templatesFromDb.map((t) => {
+                var _a;
+                return ({
+                    _id: t._id,
+                    name: t.name,
+                    isPremium: t.isPremium,
+                    description: t.description,
+                    thumbnail: ((_a = t.preview) === null || _a === void 0 ? void 0 : _a.thumbnail) || "",
+                });
+            });
             res.json({
                 success: true,
                 data: templates,
@@ -31,18 +42,6 @@ exports.templateController = {
                 return res.status(404).json({
                     success: false,
                     message: "Template not found",
-                });
-            }
-            if (template.isPremium && (!req.user || !req.user.isPremium)) {
-                return res.json({
-                    success: true,
-                    data: {
-                        _id: template._id,
-                        name: template.name,
-                        isPremium: true,
-                        description: template.description,
-                        preview: template.preview,
-                    },
                 });
             }
             res.json({

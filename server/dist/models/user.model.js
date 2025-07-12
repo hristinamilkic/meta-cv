@@ -24,6 +24,10 @@ const userSchema = new mongoose_1.Schema({
         trim: true,
         lowercase: true,
     },
+    phone: {
+        type: String,
+        trim: true,
+    },
     password: {
         type: String,
         required: [true, "Password is required"],
@@ -42,6 +46,7 @@ const userSchema = new mongoose_1.Schema({
         type: Boolean,
         default: true,
     },
+    isRoot: { type: Boolean, default: false },
     lastLogin: {
         type: Date,
     },
@@ -72,7 +77,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     }
 };
 userSchema.methods.generatePasswordResetToken = function () {
-    const resetToken = crypto_1.default.randomBytes(32).toString("hex");
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
     this.resetPasswordToken = crypto_1.default
         .createHash("sha256")
         .update(resetToken)
@@ -85,4 +90,4 @@ userSchema.index({ isPremium: 1 });
 userSchema.index({ isAdmin: 1 });
 userSchema.index({ isActive: 1 });
 exports.default = (0, mongoose_1.model)("User", userSchema);
-//# sourceMappingURL=user.model.js.map
+//# sourceMappingURL=User.model.js.map

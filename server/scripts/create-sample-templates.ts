@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Template from "../src/models/template.model";
 import dotenv from "dotenv";
-import { generateTemplateThumbnail } from "../src/services/template-thumbnail.service";
+import { generateCVThumbnail } from "../src/services/template-thumbnail.service";
 
 dotenv.config();
 
@@ -1434,16 +1434,16 @@ const visualTemplates: any[] = [
           </main>
         </div>
       </div>`,
-      css: `.cv-template.premium-dark-a4 { font-family: Montserrat, Arial, sans-serif; background: #fff; color: #f2e9e4; width: 794px; min-height: 1123px; margin: 0 auto; border-radius: 16px; box-shadow: 0 6px 24px rgba(34,34,59,0.10); padding: 0; }
+      css: `.cv-template.premium-dark-a4 { font-family: Montserrat, Arial, sans-serif; background: #fff; color: #22223b; width: 794px; min-height: 1123px; margin: 0 auto; border-radius: 16px; box-shadow: 0 6px 24px rgba(34,34,59,0.10); padding: 0; }
 .cv-template.premium-dark-a4 .cv-columns { display: flex; min-height: 1123px; }
 .cv-template.premium-dark-a4 .cv-left { background: #22223b; color: #f2e9e4; width: 260px; padding: 48px 24px; border-radius: 16px 0 0 16px; display: flex; flex-direction: column; align-items: flex-start; }
 .cv-template.premium-dark-a4 .cv-left h1 { color: #f2e9e4; font-size: 1.7rem; margin-bottom: 0.5rem; }
 .cv-template.premium-dark-a4 .cv-left h2 { color: #f2e9e4; margin-top: 2rem; }
 .cv-template.premium-dark-a4 .cv-left hr { border: none; border-top: 1px solid #f2e9e4; width: 100%; margin: 1.5rem 0; }
 .cv-template.premium-dark-a4 .profile-img-large { width: 180px; height: 180px; border-radius: 50%; object-fit: cover; margin-bottom: 1.5rem; border: 5px solid #fff !important; }
-.cv-template.premium-dark-a4 .cv-right { flex: 1; background: #fff; color: #f2e9e4; padding: 48px 40px; border-radius: 0 16px 16px 0; }
-.cv-template.premium-dark-a4 .cv-right h2 { color: #f2e9e4; margin-top: 0; }
-.cv-template.premium-dark-a4 .cv-right hr { border: none; border-top: 1px solid #f2e9e4; margin: 2rem 0; }
+.cv-template.premium-dark-a4 .cv-right { flex: 1; background: #fff; color: #22223b; padding: 48px 40px; border-radius: 0 16px 16px 0; }
+.cv-template.premium-dark-a4 .cv-right h2 { color: #22223b; margin-top: 0; }
+.cv-template.premium-dark-a4 .cv-right hr { border: none; border-top: 1px solid #22223b; margin: 2rem 0; }
 .cv-template.premium-dark-a4 section { margin-bottom: 2rem; }`,
     },
     metadata: {
@@ -1533,10 +1533,10 @@ async function createVisualTemplates() {
     console.log("Cleared existing templates");
 
     for (const template of visualTemplates as any[]) {
-      // Generate thumbnail from HTML/CSS
-      const thumbnail = await generateTemplateThumbnail(
-        template.templateData.html,
-        template.templateData.css
+      // Generate thumbnail from HTML/CSS with sample data
+      const thumbnail = await generateCVThumbnail(
+        template.defaultData,
+        template
       );
       template.preview.thumbnail = thumbnail;
       template.preview.previewImages = [thumbnail];

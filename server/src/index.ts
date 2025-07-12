@@ -25,7 +25,16 @@ connectDB();
 
 // Middleware
 app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
+
+// CORS configuration for production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL || 'https://your-app-name.vercel.app'] 
+    : ['http://localhost:3000'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions)); // Enable CORS
 app.use(express.json({ limit: "20mb" })); // Parse JSON bodies with increased limit
 app.use(express.urlencoded({ limit: "20mb", extended: true })); // Parse URL-encoded bodies with increased limit
 app.use(morgan("dev")); // Logging

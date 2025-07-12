@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/Icon";
 import api from "@/services/api";
-import Handlebars from "handlebars";
+
 import cvService from "@/services/cv.service";
 
 function stylesToCssVars(styles: any) {
@@ -38,6 +38,7 @@ export default function CVPreviewPage() {
   const [cv, setCv] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [previewHtml, setPreviewHtml] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const cvId = searchParams.get("cvId");
@@ -65,21 +66,42 @@ export default function CVPreviewPage() {
     fetchCv();
   }, [cvId, router]);
 
-  const generatePreviewHtml = useCallback(() => {
+  const generatePreviewHtml = useCallback(async () => {
     if (!cv || !cv.template) return "";
 
-    const { template, ...cvData } = cv;
-    const cssVars = template.styles
-      ? `:root {${stylesToCssVars(template.styles)}}`
-      : "";
-    const resetCss = "html,body{margin:0;padding:0;box-sizing:border-box;}";
-    const css = `${resetCss}\n${cssVars}\n${template.templateData.css}`;
+    try {
+      const { template, ...cvData } = cv;
+      const cssVars = template.styles
+        ? `:root {${stylesToCssVars(template.styles)}}`
+        : "";
+      const resetCss = "html,body{margin:0;padding:0;box-sizing:border-box;}";
+      const css = `${resetCss}\n${cssVars}\n${template.templateData.css}`;
 
-    const compiled = Handlebars.compile(template.templateData.html);
-    const htmlContent = compiled(cvData);
+      const HandlebarsModule = await import("handlebars");
+      const Handlebars = HandlebarsModule.default || HandlebarsModule;
+      const compiled = Handlebars.compile(template.templateData.html);
+      const htmlContent = compiled(cvData);
 
-    return `<html><head><style>${css}</style></head><body>${htmlContent}</body></html>`;
+      return `<html><head><style>${css}</style></head><body>${htmlContent}</body></html>`;
+    } catch (error) {
+      console.error("Error generating preview HTML:", error);
+      return `<html><body><p>Error generating preview: ${error}</p></body></html>`;
+    }
   }, [cv]);
+
+  // Generate preview HTML when cv changes
+  useEffect(() => {
+    if (cv) {
+      generatePreviewHtml()
+        .then(setPreviewHtml)
+        .catch((error) => {
+          console.error("Error in preview generation:", error);
+          setPreviewHtml(
+            `<html><body><p>Error generating preview: ${error}</p></body></html>`
+          );
+        });
+    }
+  }, [cv, generatePreviewHtml]);
 
   const handleDownload = async (cvId: string, title: string) => {
     setActionLoading(cvId + "-download");
@@ -126,7 +148,7 @@ export default function CVPreviewPage() {
           style={{ minHeight: "60vh" }}
         >
           <iframe
-            srcDoc={generatePreviewHtml()}
+            srcDoc={previewHtml}
             title="CV Preview"
             className="rounded-3xl max-w-3xl w-full h-[70vh]"
             style={{ background: "transparent" }}

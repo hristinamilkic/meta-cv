@@ -22,7 +22,8 @@ const app = (0, express_1.default)();
 (0, database_1.connectDB)();
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
-app.use(express_1.default.json());
+app.use(express_1.default.json({ limit: "20mb" }));
+app.use(express_1.default.urlencoded({ limit: "20mb", extended: true }));
 app.use((0, morgan_1.default)("dev"));
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -41,7 +42,7 @@ app.get("/", (req, res) => {
 });
 app.use("/api/users", user_routes_1.default);
 app.use("/api/templates", template_routes_1.default);
-app.use("/api/cvs", cv_routes_1.default);
+app.use("/api/cv", cv_routes_1.default);
 app.get("/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
 });

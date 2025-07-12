@@ -4,12 +4,16 @@ export interface IUser extends Document {
     lastName: string;
     email: string;
     password: string;
+    phone?: string;
     isPremium: boolean;
     isAdmin: boolean;
     isActive: boolean;
+    isRoot: boolean;
     lastLogin?: Date;
     resetPasswordToken?: string;
     resetPasswordExpire?: Date;
+    createdAt: Date;
+    updatedAt: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
     generatePasswordResetToken(): string;
 }
@@ -19,4 +23,4 @@ declare const _default: import("mongoose").Model<IUser, {}, {}, {}, Document<unk
     __v: number;
 }, any>;
 export default _default;
-//# sourceMappingURL=user.model.d.ts.map
+//# sourceMappingURL=User.model.d.ts.map

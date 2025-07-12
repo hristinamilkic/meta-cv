@@ -127,13 +127,15 @@ declare const _default: mongoose.Model<{
     personalDetails?: {
         email: string;
         fullName: string;
-        location?: string | null | undefined;
         phone?: string | null | undefined;
+        location?: string | null | undefined;
         website?: string | null | undefined;
         linkedin?: string | null | undefined;
         github?: string | null | undefined;
         summary?: string | null | undefined;
+        profileImage?: string | null | undefined;
     } | null | undefined;
+    thumbnail?: string | null | undefined;
     template?: mongoose.Types.ObjectId | null | undefined;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     createdAt: NativeDate;
@@ -263,13 +265,15 @@ declare const _default: mongoose.Model<{
     personalDetails?: {
         email: string;
         fullName: string;
-        location?: string | null | undefined;
         phone?: string | null | undefined;
+        location?: string | null | undefined;
         website?: string | null | undefined;
         linkedin?: string | null | undefined;
         github?: string | null | undefined;
         summary?: string | null | undefined;
+        profileImage?: string | null | undefined;
     } | null | undefined;
+    thumbnail?: string | null | undefined;
     template?: mongoose.Types.ObjectId | null | undefined;
 }, {}> & {
     createdAt: NativeDate;
@@ -399,13 +403,15 @@ declare const _default: mongoose.Model<{
     personalDetails?: {
         email: string;
         fullName: string;
-        location?: string | null | undefined;
         phone?: string | null | undefined;
+        location?: string | null | undefined;
         website?: string | null | undefined;
         linkedin?: string | null | undefined;
         github?: string | null | undefined;
         summary?: string | null | undefined;
+        profileImage?: string | null | undefined;
     } | null | undefined;
+    thumbnail?: string | null | undefined;
     template?: mongoose.Types.ObjectId | null | undefined;
 } & {
     _id: mongoose.Types.ObjectId;
@@ -541,13 +547,15 @@ declare const _default: mongoose.Model<{
     personalDetails?: {
         email: string;
         fullName: string;
-        location?: string | null | undefined;
         phone?: string | null | undefined;
+        location?: string | null | undefined;
         website?: string | null | undefined;
         linkedin?: string | null | undefined;
         github?: string | null | undefined;
         summary?: string | null | undefined;
+        profileImage?: string | null | undefined;
     } | null | undefined;
+    thumbnail?: string | null | undefined;
     template?: mongoose.Types.ObjectId | null | undefined;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     createdAt: NativeDate;
@@ -677,13 +685,15 @@ declare const _default: mongoose.Model<{
     personalDetails?: {
         email: string;
         fullName: string;
-        location?: string | null | undefined;
         phone?: string | null | undefined;
+        location?: string | null | undefined;
         website?: string | null | undefined;
         linkedin?: string | null | undefined;
         github?: string | null | undefined;
         summary?: string | null | undefined;
+        profileImage?: string | null | undefined;
     } | null | undefined;
+    thumbnail?: string | null | undefined;
     template?: mongoose.Types.ObjectId | null | undefined;
 }>, {}> & mongoose.FlatRecord<{
     createdAt: NativeDate;
@@ -813,13 +823,15 @@ declare const _default: mongoose.Model<{
     personalDetails?: {
         email: string;
         fullName: string;
-        location?: string | null | undefined;
         phone?: string | null | undefined;
+        location?: string | null | undefined;
         website?: string | null | undefined;
         linkedin?: string | null | undefined;
         github?: string | null | undefined;
         summary?: string | null | undefined;
+        profileImage?: string | null | undefined;
     } | null | undefined;
+    thumbnail?: string | null | undefined;
     template?: mongoose.Types.ObjectId | null | undefined;
 }> & {
     _id: mongoose.Types.ObjectId;
@@ -827,4 +839,4 @@ declare const _default: mongoose.Model<{
     __v: number;
 }>>;
 export default _default;
-//# sourceMappingURL=cv.model.d.ts.map
+//# sourceMappingURL=CV.model.d.ts.map
