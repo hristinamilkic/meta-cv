@@ -27,30 +27,14 @@ connectDB();
 app.use(helmet()); // Security headers
 
 // CORS configuration for production
-// Debug log
-console.log("CORS allowed origins:", [
-  process.env.FRONTEND_URL,
-  "http://localhost:3000",
-]);
-console.log("FRONTEND_URL env:", process.env.FRONTEND_URL);
-
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "http://localhost:3000",
-].filter(Boolean);
+console.log("CORS allowed origin:", process.env.FRONTEND_URL);
 
 const corsOptions = {
-  origin: function (origin: any, callback: any) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: process.env.FRONTEND_URL,
   credentials: true,
   optionsSuccessStatus: 200,
 };
-app.use(cors(corsOptions));
+app.use(cors(corsOptions)); // Enable CORS
 app.use(express.json({ limit: "20mb" })); // Parse JSON bodies with increased limit
 app.use(express.urlencoded({ limit: "20mb", extended: true })); // Parse URL-encoded bodies with increased limit
 app.use(morgan("dev")); // Logging
