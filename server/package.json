@@ -7,7 +7,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "postinstall": "npm run build",
+    "postinstall": "npx puppeteer install && npm run build",
     "create-admin": "ts-node scripts/create-admin.ts",
     "lint": "eslint . --ext .ts",
     "test": "jest",
