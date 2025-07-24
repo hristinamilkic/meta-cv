@@ -21,7 +21,13 @@ if (missingEnvVars.length > 0) {
 const app = (0, express_1.default)();
 (0, database_1.connectDB)();
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)());
+console.log("CORS allowed origin:", process.env.FRONTEND_URL);
+const corsOptions = {
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+    optionsSuccessStatus: 200,
+};
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json({ limit: "20mb" }));
 app.use(express_1.default.urlencoded({ limit: "20mb", extended: true }));
 app.use((0, morgan_1.default)("dev"));

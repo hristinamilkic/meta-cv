@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.emailService = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const logo_util_1 = require("../utils/logo.util");
 class EmailService {
     constructor() {
         this.transporter = nodemailer_1.default.createTransport({
@@ -17,9 +16,7 @@ class EmailService {
         });
     }
     async sendPasswordResetEmail(email, resetToken) {
-        console.log(`Attempting to send password reset email to: ${email}`);
-        const logoBase64 = (0, logo_util_1.getMetaCVLogoBase64)();
-        console.log(`Logo loaded: ${logoBase64.substring(0, 50)}...`);
+        const logoUrl = "https://i.imgur.com/awWR2CW.png";
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
@@ -37,9 +34,9 @@ class EmailService {
           <!-- Header with Logo -->
           <div style="background: #FFF9EC; padding: 30px 20px; text-align: center; border-radius: 12px 12px 0 0;">
             <!-- MetaCV Logo -->
-            <div style="margin-bottom: 20px;">
-              <img src="${logoBase64}" alt="MetaCV Logo" style="height: 60px; max-width: 200px; display: block; margin: 0 auto; border-radius: 8px;">
-            </div>
+             <div style="margin-bottom: 20px;">
+            <img src="${logoUrl}" alt="MetaCV Logo" style="display: block; margin: 0 auto; border-radius: 8px;">
+          </div>
             <h1 style="color: #000000; margin: 0; font-size: 24px; font-weight: 600;">Password Reset</h1>
             <p style="color: #000000; margin: 5px 0 0 0; font-size: 14px;">MetaCV</p>
           </div>
