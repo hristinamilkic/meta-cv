@@ -27,7 +27,17 @@ connectDB();
 app.use(helmet()); // Security headers
 
 // CORS configuration for production
-const allowedOrigins = [process.env.FRONTEND_URL, "http://localhost:3000"];
+// Debug log
+console.log("CORS allowed origins:", [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+]);
+console.log("FRONTEND_URL env:", process.env.FRONTEND_URL);
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin: any, callback: any) {
@@ -40,7 +50,7 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200,
 };
-app.use(cors(corsOptions)); // Enable CORS
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "20mb" })); // Parse JSON bodies with increased limit
 app.use(express.urlencoded({ limit: "20mb", extended: true })); // Parse URL-encoded bodies with increased limit
 app.use(morgan("dev")); // Logging
