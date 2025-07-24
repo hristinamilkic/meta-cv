@@ -27,11 +27,16 @@ connectDB();
 app.use(helmet()); // Security headers
 
 // CORS configuration for production
+const allowedOrigins = [process.env.FRONTEND_URL, "http://localhost:3000"];
+
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? [process.env.FRONTEND_URL || "https://meta-cv-lac.vercel.app/"]
-      : ["http://localhost:3000"],
+  origin: function (origin: any, callback: any) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 };
