@@ -28,11 +28,12 @@ app.use(helmet()); // Security headers
 
 // CORS configuration for production
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://your-app-name.vercel.app'] 
-    : ['http://localhost:3000'],
+  origin:
+    process.env.NODE_ENV === "production"
+      ? [process.env.FRONTEND_URL || "https://meta-cv-lac.vercel.app/"]
+      : ["http://localhost:3000"],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions)); // Enable CORS
 app.use(express.json({ limit: "20mb" })); // Parse JSON bodies with increased limit
